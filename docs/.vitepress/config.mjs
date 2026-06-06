@@ -4,7 +4,7 @@ export default defineConfig({
   title: "Teken Heula API",
   description: "Dokumentasi Resmi API Sistem E-Sign & E-Seal",
   themeConfig: {
-    logo: '/assets/images/UPI-Logo-white.png',
+    logo: { light: '/assets/images/logoupimerah.png', dark: '/assets/images/UPI-Logo-white.png' },
     nav: [
       { text: 'Home', link: '/' },
       { text: 'API Docs', link: '/api/language-cert' }

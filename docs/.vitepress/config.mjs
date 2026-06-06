@@ -15,7 +15,7 @@ export default defineConfig({
       {
         text: 'Pengenalan',
         items: [
-          { text: 'Apa itu Teken Heula?', link: '/' }
+          { text: 'Apa itu Teken Heula?', link: '/api/pengantar' }
         ]
       },
       {

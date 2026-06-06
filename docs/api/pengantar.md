@@ -12,10 +12,9 @@ API ini dibangun untuk memberikan "jalan tol" bagi seluruh sistem dan aplikasi (
 
 ## Fitur Unggulan
 
-1. **Pemrosesan Massal Cepat**: Mampu memproses ribuan dokumen secara asinkron menggunakan sistem *queue* di latar belakang.
-2. **Sinergi Terpusat**: Otomatis tersinkronisasi (*Just-In-Time Provisioning*) dengan data pegawai (Sinergi UPI).
-3. **Optimasi Stream**: Mengunduh langsung file akhir (*raw PDF stream*) tanpa terbebani konversi *base64* yang boros memori.
-4. **Proteksi Tinggi**: Menggunakan skema keamanan `Laravel Sanctum` berbasis *Bearer Token*.
+1. **Pemrosesan Massal (Bulk)**: Proses tanda tangan dan penyegelan ribuan dokumen elektronik sekaligus dalam satu batch tanpa kendala performa.
+2. **Tersertifikasi BSrE**: Keamanan, integritas, dan validitas hukum dokumen terjamin melalui tanda tangan digital tersertifikasi oleh Badan Siber dan Sandi Negara (BSrE).
+3. **Integrasi Terpusat UPI**: API dirancang andal untuk mendukung kebutuhan layanan penandatanganan dokumen elektronik pada seluruh sistem dan aplikasi di lingkungan Universitas Pendidikan Indonesia (UPI).
 
 ---
 

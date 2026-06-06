@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: "Teken Heula API",
   description: "Dokumentasi Resmi API Sistem E-Sign & E-Seal",
+  base: '/docs/',
   themeConfig: {
     siteTitle: false,
     logo: { light: '/assets/images/logoupimerah.png', dark: '/assets/images/UPI-Logo-white.png' },

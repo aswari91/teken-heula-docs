@@ -1,4 +1,4 @@
-# Referensi API Core (E-Sign & E-Seal Massal)
+# Referensi API Language Cert
 
 API Teken Heula menggunakan arsitektur RESTful dengan format pertukaran data JSON. Karena dirancang untuk kebutuhan **massal (bulk)**, proses penandatanganan dan penyegelan berjalan secara *asynchronous* menggunakan sistem antrean (*queue*) di *backend*.
 

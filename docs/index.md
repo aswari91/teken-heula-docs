@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: Mulai Integrasi
-      link: /api/pengantar
+      link: /api/language-cert
     - theme: alt
       text: GitHub Repository
       link: https://github.com/aswari91/teken-heula-docs

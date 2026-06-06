@@ -13,12 +13,11 @@ Gunakan base URL sesuai environment, contoh:
 
 - Semua endpoint menggunakan middleware `auth:sanctum`.
 - Semua endpoint membutuhkan token valid (Bearer Token).
-- `POST /sign-language-certs` -> `can:ApiCreate:DocLanguageCert`
-- `PUT /sign-language-certs/{documentId}` -> `can:ApiUpdate:DocLanguageCert`
-
-> [!NOTE]
-> Endpoint `GET /sign-language-certs/{documentId}` dan `GET /sign-language-certs/{documentId}/file` bersifat **Publik** (tidak memerlukan token Bearer) dan keamanannya dijamin melalui kerahasiaan UUID dokumen.
-
+- Setiap endpoint juga dilindungi permission policy:
+    - `POST /sign-language-certs` -> `can:ApiCreate:DocLanguageCert`
+    - `PUT /sign-language-certs/{documentId}` -> `can:ApiUpdate:DocLanguageCert`
+    - `GET /sign-language-certs/{documentId}` -> `can:ApiView:DocLanguageCert`
+    - `GET /sign-language-certs/{documentId}/file` -> `can:ApiView:DocLanguageCert`
 ## Struktur Data
 
 ### Objek `doc`
@@ -321,8 +320,6 @@ Status: `404 Not Found`
 - Path param:
     - `documentId` (UUID dokumen)
 
-> [!TIP]
-> Endpoint ini bersifat publik. Anda bisa langsung menggunakannya pada tag `<iframe src="...">` atau `<a href="...">` di Front-End Anda.
 
 ### Response Sukses
 
@@ -409,15 +406,17 @@ curl -X PUT "https://your-domain.com/api/sign-language-certs/3a8d5c62-3f8f-4fc9-
   -d '{ ...payload sama seperti create... }'
 ```
 
-## Get Detail (Publik)
+## Get Detail
 
 ```bash
-curl -X GET "https://your-domain.com/api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090"
+curl -X GET "https://your-domain.com/api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090" \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-## Download File (Publik)
+## Download File
 
 ```bash
 curl -X GET "https://your-domain.com/api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090/file" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
   --output downloaded_certificate.pdf
 ```

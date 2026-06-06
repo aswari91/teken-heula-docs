@@ -7,6 +7,7 @@ export default withMermaid(
     title: "Teken Heula API",
     description: "Dokumentasi Resmi API Sistem E-Sign & E-Seal",
     base: "/docs/",
+    appearance: 'dark',
     themeConfig: {
       siteTitle: false,
       logo: {

@@ -21,6 +21,6 @@ features:
     title: Tersertifikasi BSrE
     details: Keamanan, integritas, dan validitas hukum dokumen terjamin melalui tanda tangan digital tersertifikasi oleh Badan Siber dan Sandi Negara (BSrE).
   - icon: ⚡
-    title: Optimasi Storage & Stream
-    details: Unduh dokumen akhir langsung via data stream. Hemat penyimpanan dan bandwidth tanpa overhead konversi Base64 yang berat.
+    title: Integrasi Terpusat UPI
+    details: API dirancang handal untuk mendukung kebutuhan layanan penandatanganan dokumen elektronik pada seluruh sistem dan aplikasi di lingkungan Universitas Pendidikan Indonesia (UPI).
 ---

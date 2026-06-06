@@ -8,8 +8,6 @@ layout: doc
 > Halaman ini menjelaskan apa itu token, cara mendapatkannya, dan cara
 > menggunakannya dengan benar dan aman.
 
----
-
 ## Apa Itu Token dan Mengapa Dibutuhkan?
 
 Bayangkan token seperti **kartu akses gedung kantor**. Setiap kali Anda masuk,
@@ -21,17 +19,15 @@ Tanpa token, semua request akan ditolak dengan pesan `401 Unauthorized`.
 
 Ada dua konsep yang perlu dipahami:
 
-| Konsep | Pertanyaan yang Dijawab | Kode Error Jika Gagal |
-| :--- | :--- | :--- |
-| **Autentikasi** | *Siapa kamu?* — Verifikasi identitas lewat token | `401 Unauthorized` |
-| **Otorisasi** | *Apa yang boleh kamu lakukan?* — Cek hak akses (permission) | `403 Forbidden` |
+| Konsep          | Pertanyaan yang Dijawab                                     | Kode Error Jika Gagal |
+| :-------------- | :---------------------------------------------------------- | :-------------------- |
+| **Autentikasi** | _Siapa kamu?_ — Verifikasi identitas lewat token            | `401 Unauthorized`    |
+| **Otorisasi**   | _Apa yang boleh kamu lakukan?_ — Cek hak akses (permission) | `403 Forbidden`       |
 
 > [!NOTE]
 > Token hanya membuktikan Anda sudah login. Tapi setiap endpoint juga
 > membutuhkan **izin (permission)** khusus. Memiliki token tidak otomatis
 > memberikan akses ke semua fitur — hubungi Admin jika Anda menerima `403`.
-
----
 
 ## Alur Mendapatkan Akses
 
@@ -44,9 +40,7 @@ flowchart TD
     E --> F{{"Akses API Berhasil ✅"}}
 ```
 
----
-
-## Langkah 1 — Login ke Aplikasi
+### Langkah 1 — Login ke Aplikasi
 
 Buka aplikasi Teken Heula di browser Anda dan login menggunakan akun SSO UPI
 atau akun yang telah diberikan oleh Administrator.
@@ -57,7 +51,7 @@ atau akun yang telah diberikan oleh Administrator.
 
 ---
 
-## Langkah 2 — Salin Token Akses Anda
+### Langkah 2 — Salin Token Akses Anda
 
 Setelah login, ikuti langkah berikut:
 
@@ -68,12 +62,12 @@ Setelah login, ikuti langkah berikut:
 
 > [!WARNING]
 > **Jaga kerahasiaan token Anda.** Token bersifat seperti kata sandi.
-> Jangan pernah meletakkannya di dalam kode yang di-*commit* ke Git,
+> Jangan pernah meletakkannya di dalam kode yang di-_commit_ ke Git,
 > atau membagikannya melalui chat / email.
 
 ---
 
-## Langkah 3 — Gunakan Token di Setiap Request
+### Langkah 3 — Gunakan Token di Setiap Request
 
 Setelah mendapatkan token, sertakan di setiap request API pada bagian **Header**:
 
@@ -92,17 +86,15 @@ curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/abc-123" \
 
 > [!TIP]
 > Di aplikasi seperti **Postman** or **Insomnia**, Anda cukup isi bagian
-> *Authorization* dengan tipe **Bearer Token**, lalu tempelkan token Anda di
+> _Authorization_ dengan tipe **Bearer Token**, lalu tempelkan token Anda di
 > kolom yang tersedia — tidak perlu menulis manual di Header.
-
----
 
 ## Kode Error Terkait Autentikasi
 
-| Kode | Arti | Penyebab Umum | Yang Harus Dilakukan |
-| :--- | :--- | :--- | :--- |
-| `401 Unauthorized` | Token tidak dikenali | Token hilang, salah ketik, atau sudah kadaluarsa | Salin ulang token dari halaman profil |
-| `403 Forbidden` | Tidak memiliki hak akses | Token valid, tapi permission tidak ada | Hubungi Admin untuk meminta izin akses |
+| Kode               | Arti                     | Penyebab Umum                                    | Yang Harus Dilakukan                   |
+| :----------------- | :----------------------- | :----------------------------------------------- | :------------------------------------- |
+| `401 Unauthorized` | Token tidak dikenali     | Token hilang, salah ketik, atau sudah kadaluarsa | Salin ulang token dari halaman profil  |
+| `403 Forbidden`    | Tidak memiliki hak akses | Token valid, tapi permission tidak ada           | Hubungi Admin untuk meminta izin akses |
 
 ---
 
@@ -114,12 +106,10 @@ Ikuti panduan berikut untuk menjaga keamanan integrasi Anda:
 - ✅ Simpan token di **Environment Variable** (`.env`) dan baca dari sana.
 - ✅ Rutin **perbarui (rotate) token** secara berkala, terutama jika ada
   anggota tim yang keluar.
-- ✅ Gunakan token yang berbeda untuk setiap lingkungan (*Development* vs
-  *Production*).
+- ✅ Gunakan token yang berbeda untuk setiap lingkungan (_Development_ vs
+  _Production_).
 - ❌ **Jangan** membagikan token melalui WhatsApp, Slack, atau media komunikasi
   yang tidak terenkripsi.
-
----
 
 ## Pertanyaan Umum (FAQ)
 
@@ -129,7 +119,7 @@ Admin, token tersebut tidak akan bisa digunakan lagi dan Anda perlu
 mendapatkan token baru.
 
 **❓ Apa yang harus saya lakukan jika token saya bocor atau diketahui orang lain?**
-Segera hubungi Admin untuk mencabut (*revoke*) token tersebut, lalu generate
+Segera hubungi Admin untuk mencabut (_revoke_) token tersebut, lalu generate
 token baru dari halaman profil Anda.
 
 **❓ Apakah satu token bisa digunakan untuk semua endpoint API?**
@@ -139,5 +129,5 @@ bisa digunakan ke semua endpoint yang sudah diizinkan.
 
 **❓ Kenapa saya mendapat error `403` padahal token saya benar?**
 Artinya token Anda valid (identitas dikenali), tapi akun Anda belum memiliki
-izin (*permission*) untuk endpoint tersebut. Hubungi Administrator untuk
+izin (_permission_) untuk endpoint tersebut. Hubungi Administrator untuk
 meminta penambahan permission yang sesuai.

@@ -6,7 +6,7 @@ hero:
   text: "Dokumentasi Resmi API Teken Heula"
   tagline: "API untuk Integrasi Layanan Tanda Tangan Digital Elektronik di Lingkungan Universitas Pendidikan Indonesia (UPI)"
   image:
-    src: /assets/images/logoupimerah.png
+    src: /assets/images/UPI-rebranding.svg
     alt: UPI Logo
   actions:
     - theme: brand

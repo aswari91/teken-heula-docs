@@ -7,13 +7,14 @@ layout: doc
 > **API ini digunakan untuk menerbitkan, memperbarui (merevisi), memantau status proses, dan mengunduh file PDF Sertifikat Bahasa yang telah ditandatangani secara elektronik.**
 
 **Yang bisa Anda lakukan dengan API ini:**
+
 - ✅ Mendaftarkan pengajuan sertifikat bahasa baru.
 - ✅ Memperbarui data sertifikat (merevisi isi dokumen atau tanda tangan jika belum selesai diproses).
-- ✅ Memantau status antrean sertifikat secara berkala (*real-time status check*).
+- ✅ Memantau status antrean sertifikat secara berkala (_real-time status check_).
 - ✅ Mengunduh hasil akhir dokumen dalam format PDF yang telah disegel dan ditandatangani.
 
 > [!NOTE]
-> Proses penandatanganan dan pembubuhan segel digital berjalan secara *asynchronous*. Dokumen tidak langsung siap seketika setelah API dipanggil. Dokumen Anda akan masuk ke dalam antrean (*queue*) sistem untuk diproses secara berurutan di latar belakang guna menjaga performa server tetap optimal.
+> Proses penandatanganan dan pembubuhan segel digital berjalan secara _asynchronous_. Dokumen tidak langsung siap seketika setelah API dipanggil. Dokumen Anda akan masuk ke dalam antrean (_queue_) sistem untuk diproses secara berurutan di latar belakang guna menjaga performa server tetap optimal.
 
 ---
 
@@ -36,13 +37,13 @@ flowchart TD
 
 Pastikan sistem Anda telah menyiapkan data dan persyaratan berikut sebelum berinteraksi dengan API:
 
-| Syarat | Keterangan |
-| :--- | :--- |
-| 🔑 **Bearer Token** | Kunci akses API Anda. Hubungi Admin atau dapatkan dari profil akun Anda. |
-| 👤 **NIP E-Seal** | NIP penanggung jawab segel digital yang **wajib terdaftar** di sistem Sinergi UPI. |
-| 👤 **NIP E-Sign** | NIP penandatangan dokumen yang **wajib terdaftar** di sistem Sinergi UPI. |
-| 📄 **File PDF (Base64)** | Dokumen sertifikat asli berformat PDF yang telah dikonversi ke string Base64. |
-| 🖼️ **Tanda Tangan (Base64)** | Gambar tanda tangan berformat PNG/JPG yang telah dikonversi ke string Base64. |
+| Syarat                       | Keterangan                                                                         |
+| :--------------------------- | :--------------------------------------------------------------------------------- |
+| 🔑 **Bearer Token**          | Kunci akses API Anda. Hubungi Admin atau dapatkan dari profil akun Anda.           |
+| 👤 **NIP E-Seal**            | NIP penanggung jawab segel digital yang **wajib terdaftar** di sistem Sinergi UPI. |
+| 👤 **NIP E-Sign**            | NIP penandatangan dokumen yang **wajib terdaftar** di sistem Sinergi UPI.          |
+| 📄 **File PDF (Base64)**     | Dokumen sertifikat asli berformat PDF yang telah dikonversi ke string Base64.      |
+| 🖼️ **Tanda Tangan (Base64)** | Gambar tanda tangan berformat PNG/JPG yang telah dikonversi ke string Base64.      |
 
 ---
 
@@ -50,16 +51,16 @@ Pastikan sistem Anda telah menyiapkan data dan persyaratan berikut sebelum berin
 
 ### Base URL
 
-Seluruh endpoint API dapat diakses menggunakan basis URL berikut sesuai dengan lingkungan (*environment*) kerja Anda:
+Seluruh endpoint API dapat diakses menggunakan basis URL berikut sesuai dengan lingkungan (_environment_) kerja Anda:
 
-| Lingkungan | URL |
-| :--- | :--- |
-| **Development** | `http://localhost:8000/api` |
-| **Production** | `https://tekenheula.upi.edu/api` |
+| Lingkungan      | URL                              |
+| :-------------- | :------------------------------- |
+| **Development** | `http://localhost:8000/api`      |
+| **Production**  | `https://tekenheula.upi.edu/api` |
 
 ### Header Wajib
 
-Sertakan selalu header berikut pada setiap permintaan (*request*) ke server:
+Sertakan selalu header berikut pada setiap permintaan (_request_) ke server:
 
 ```http
 Authorization: Bearer <TOKEN_AKSES_ANDA>
@@ -74,9 +75,10 @@ Accept: application/json
 > [!NOTE]
 > Panduan lengkap mengenai cara mendapatkan token akses dan mematuhinya secara aman dapat dibaca di halaman [Autentikasi & Keamanan](./autentikasi.md).
 
-Sistem Teken Heula menerapkan otorisasi ketat berbasis peran (*role-based permissions*) untuk memastikan hanya pihak yang berhak yang dapat memproses dokumen sertifikat.
+Sistem Teken Heula menerapkan otorisasi ketat berbasis peran (_role-based permissions_) untuk memastikan hanya pihak yang berhak yang dapat memproses dokumen sertifikat.
 
 ### Lapisan 1 — Autentikasi (Siapa Anda?)
+
 Setiap permintaan wajib menyertakan **Bearer Token** pada header HTTP `Authorization`. Token ini memverifikasi identitas pengguna Anda.
 
 ```http
@@ -84,18 +86,20 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
 ```
 
 ### Lapisan 2 — Otorisasi (Apa yang boleh Anda lakukan?)
-Meskipun token Anda valid, tindakan Anda tetap dibatasi oleh izin (*permission*) khusus. Pastikan token Anda memiliki izin berikut:
 
-| Jalur API | Aksi | Izin (Permission) yang Dibutuhkan |
-| :--- | :--- | :--- |
-| `POST /sign-language-certs` | Membuat sertifikat baru | `ApiCreate:DocLanguageCert` |
-| `PUT /sign-language-certs/{documentId}` | Memperbarui data sertifikat | `ApiUpdate:DocLanguageCert` |
-| `GET /sign-language-certs/{documentId}` | Melihat detail status sertifikat | `ApiView:DocLanguageCert` |
-| `GET /sign-language-certs/{documentId}/file` | Mengunduh file PDF | `ApiView:DocLanguageCert` |
+Meskipun token Anda valid, tindakan Anda tetap dibatasi oleh izin (_permission_) khusus. Pastikan token Anda memiliki izin berikut:
+
+| Jalur API                                    | Aksi                             | Izin (Permission) yang Dibutuhkan |
+| :------------------------------------------- | :------------------------------- | :-------------------------------- |
+| `POST /sign-language-certs`                  | Membuat sertifikat baru          | `ApiCreate:DocLanguageCert`       |
+| `PUT /sign-language-certs/{documentId}`      | Memperbarui data sertifikat      | `ApiUpdate:DocLanguageCert`       |
+| `GET /sign-language-certs/{documentId}`      | Melihat detail status sertifikat | `ApiView:DocLanguageCert`         |
+| `GET /sign-language-certs/{documentId}/file` | Mengunduh file PDF               | `ApiView:DocLanguageCert`         |
 
 > [!WARNING]
+>
 > - **`401 Unauthorized`**: Terjadi jika token tidak disertakan, salah, atau telah kadaluarsa. Silakan periksa kembali penulisan token Anda.
-> - **`403 Forbidden`**: Terjadi jika token valid tetapi akun Anda tidak memiliki hak akses (*permission*) untuk melakukan tindakan tersebut. Silakan hubungi Administrator sistem untuk penyesuaian hak akses.
+> - **`403 Forbidden`**: Terjadi jika token valid tetapi akun Anda tidak memiliki hak akses (_permission_) untuk melakukan tindakan tersebut. Silakan hubungi Administrator sistem untuk penyesuaian hak akses.
 
 ---
 
@@ -103,18 +107,18 @@ Meskipun token Anda valid, tindakan Anda tetap dibatasi oleh izin (*permission*)
 
 ### 1. Objek Utama `doc` (Informasi Sertifikat)
 
-| Parameter | Tipe | Wajib | Batasan | Penjelasan |
-| :--- | :--- | :--- | :--- | :--- |
-| `certificate_number` | string | ✅ Ya | Max 255 karakter | Nomor unik sertifikat. Contoh: `"CERT-2026-001"` |
-| `participant_name` | string | ✅ Ya | Max 255 karakter | Nama lengkap penerima sertifikat. |
-| `institution` | string | ✅ Ya | Max 255 karakter | Nama instansi atau lembaga penerima. |
-| `file_base64` | string | ✅ Ya | PDF Base64 valid | String dokumen PDF asli yang telah diubah ke format Base64. |
+| Parameter            | Tipe   | Wajib | Batasan          | Penjelasan                                                  |
+| :------------------- | :----- | :---- | :--------------- | :---------------------------------------------------------- |
+| `certificate_number` | string | ✅ Ya | Max 255 karakter | Nomor unik sertifikat. Contoh: `"CERT-2026-001"`            |
+| `participant_name`   | string | ✅ Ya | Max 255 karakter | Nama lengkap penerima sertifikat.                           |
+| `institution`        | string | ✅ Ya | Max 255 karakter | Nama instansi atau lembaga penerima.                        |
+| `file_base64`        | string | ✅ Ya | PDF Base64 valid | String dokumen PDF asli yang telah diubah ke format Base64. |
 
 ### 2. Objek `eseal` (Segel Digital Instansi)
 
-| Parameter | Tipe | Wajib | Penjelasan |
-| :--- | :--- | :--- | :--- |
-| `nip` | string | ✅ Ya | NIP pemilik segel digital. Harus terdaftar di sistem Sinergi UPI. |
+| Parameter | Tipe   | Wajib | Penjelasan                                                        |
+| :-------- | :----- | :---- | :---------------------------------------------------------------- |
+| `nip`     | string | ✅ Ya | NIP pemilik segel digital. Harus terdaftar di sistem Sinergi UPI. |
 
 ### 3. Array `esign` (Tanda Tangan Digital Pejabat)
 
@@ -123,25 +127,26 @@ Meskipun token Anda valid, tindakan Anda tetap dibatasi oleh izin (*permission*)
 
 Setiap item di dalam array `esign` harus memiliki properti berikut:
 
-| Parameter | Tipe | Wajib | Penjelasan |
-| :--- | :--- | :--- | :--- |
-| `nip` | string | ✅ Ya | NIP penandatangan. Harus terdaftar di sistem Sinergi UPI. |
-| `order` | integer | ✅ Ya | Nilai urutan tanda tangan (isi dengan `1`). |
-| `signature_properties` | object | ✅ Ya | Detail properti visual tanda tangan pada halaman PDF. |
+| Parameter              | Tipe    | Wajib | Penjelasan                                                |
+| :--------------------- | :------ | :---- | :-------------------------------------------------------- |
+| `nip`                  | string  | ✅ Ya | NIP penandatangan. Harus terdaftar di sistem Sinergi UPI. |
+| `order`                | integer | ✅ Ya | Nilai urutan tanda tangan (isi dengan `1`).               |
+| `signature_properties` | object  | ✅ Ya | Detail properti visual tanda tangan pada halaman PDF.     |
 
 #### Sub-Objek `signature_properties`
 
-| Parameter | Tipe | Wajib | Batasan | Penjelasan |
-| :--- | :--- | :--- | :--- | :--- |
-| `tag` | string | ✅ Ya | Unik | Label penanda posisi tanda tangan pada template PDF (misal: `#`). |
-| `imageBase64` | string | ✅ Ya | Gambar Base64 | File gambar tanda tangan tangan (PNG/JPG) dalam format Base64. |
-| `width` | numeric | ✅ Ya | Min 1 | Lebar tampilan tanda tangan digital pada dokumen (pixel). |
-| `height` | numeric | ✅ Ya | Min 1 | Tinggi tampilan tanda tangan digital pada dokumen (pixel). |
-| `reason` | string | Opsional | - | Alasan penandatanganan dokumen. |
-| `location` | string | Opsional | - | Lokasi fisik saat penandatanganan dilakukan. |
+| Parameter     | Tipe    | Wajib    | Batasan       | Penjelasan                                                        |
+| :------------ | :------ | :------- | :------------ | :---------------------------------------------------------------- |
+| `tag`         | string  | ✅ Ya    | Unik          | Label penanda posisi tanda tangan pada template PDF (misal: `#`). |
+| `imageBase64` | string  | ✅ Ya    | Gambar Base64 | File gambar tanda tangan tangan (PNG/JPG) dalam format Base64.    |
+| `width`       | numeric | ✅ Ya    | Min 1         | Lebar tampilan tanda tangan digital pada dokumen (pixel).         |
+| `height`      | numeric | ✅ Ya    | Min 1         | Tinggi tampilan tanda tangan digital pada dokumen (pixel).        |
+| `reason`      | string  | Opsional | -             | Alasan penandatanganan dokumen.                                   |
+| `location`    | string  | Opsional | -             | Lokasi fisik saat penandatanganan dilakukan.                      |
 
 > [!TIP]
 > **Cara Mengonversi File ke Base64 via Terminal:**
+>
 > - **macOS/Linux:**
 >   ```bash
 >   base64 -i nama_file.pdf | tr -d '\n'
@@ -161,10 +166,10 @@ Setiap item di dalam array `esign` harus memiliki properti berikut:
 
 **Informasi Teknis**
 
-| Detail | Nilai |
-| :--- | :--- |
-| **Method** | `POST` |
-| **URL** | `/api/sign-language-certs` |
+| Detail       | Nilai                            |
+| :----------- | :------------------------------- |
+| **Method**   | `POST`                           |
+| **URL**      | `/api/sign-language-certs`       |
 | **Keamanan** | 🔒 Bearer Token wajib disertakan |
 
 **Contoh Permintaan (Request)**
@@ -270,9 +275,7 @@ Content-Type: application/json
     "doc.file_base64": [
       "doc.file_base64 harus berupa file PDF base64 yang valid."
     ],
-    "eseal.nip": [
-      "eseal.nip belum terdaftar sebagai pengguna e-seal."
-    ]
+    "eseal.nip": ["eseal.nip belum terdaftar sebagai pengguna e-seal."]
   }
 }
 ```
@@ -282,21 +285,21 @@ Content-Type: application/json
 ### 2. Update Certificate
 
 > **Digunakan untuk mengubah atau merevisi data sertifikat yang telah didaftarkan sebelumnya.**
-> 
-> *Catatan Perilaku:* API ini berguna jika terjadi kesalahan input atau revisi dokumen sebelum proses penandatanganan selesai. Jika file PDF (`file_base64`) diubah, maka status verifikasi sebelumnya (`eseal_status`) akan di-reset kembali ke awal (`not_yet_sealed`) dan seluruh antrean pengerjaan dokumen ini akan diproses ulang demi menjaga validitas integritas data.
+>
+> _Catatan Perilaku:_ API ini berguna jika terjadi kesalahan input atau revisi dokumen sebelum proses penandatanganan selesai. Jika file PDF (`file_base64`) diubah, maka status verifikasi sebelumnya (`eseal_status`) akan di-reset kembali ke awal (`not_yet_sealed`) dan seluruh antrean pengerjaan dokumen ini akan diproses ulang demi menjaga validitas integritas data.
 
 **Informasi Teknis**
 
-| Detail | Nilai |
-| :--- | :--- |
-| **Method** | `PUT` |
-| **URL** | `/api/sign-language-certs/{documentId}` |
-| **Keamanan** | 🔒 Bearer Token wajib disertakan |
+| Detail       | Nilai                                   |
+| :----------- | :-------------------------------------- |
+| **Method**   | `PUT`                                   |
+| **URL**      | `/api/sign-language-certs/{documentId}` |
+| **Keamanan** | 🔒 Bearer Token wajib disertakan        |
 
 **Parameter Path (URL)**
 
-| Parameter | Tipe | Wajib | Penjelasan |
-| :--- | :--- | :--- | :--- |
+| Parameter    | Tipe          | Wajib | Penjelasan                                                       |
+| :----------- | :------------ | :---- | :--------------------------------------------------------------- |
 | `documentId` | string (UUID) | ✅ Ya | ID dokumen unik yang diperoleh pada saat pembuatan pertama kali. |
 
 **Contoh Permintaan (Request)**
@@ -394,20 +397,20 @@ Content-Type: application/json
 
 ### 3. Get Certificate Detail
 
-> **Digunakan untuk memantau status pengerjaan sertifikat serta melacak alur *timeline* proses segel digital dan tanda tangan.**
+> **Digunakan untuk memantau status pengerjaan sertifikat serta melacak alur _timeline_ proses segel digital dan tanda tangan.**
 
 **Informasi Teknis**
 
-| Detail | Nilai |
-| :--- | :--- |
-| **Method** | `GET` |
-| **URL** | `/api/sign-language-certs/{documentId}` |
-| **Keamanan** | 🔒 Bearer Token wajib disertakan |
+| Detail       | Nilai                                   |
+| :----------- | :-------------------------------------- |
+| **Method**   | `GET`                                   |
+| **URL**      | `/api/sign-language-certs/{documentId}` |
+| **Keamanan** | 🔒 Bearer Token wajib disertakan        |
 
 **Parameter Path (URL)**
 
-| Parameter | Tipe | Wajib | Penjelasan |
-| :--- | :--- | :--- | :--- |
+| Parameter    | Tipe          | Wajib | Penjelasan                                     |
+| :----------- | :------------ | :---- | :--------------------------------------------- |
 | `documentId` | string (UUID) | ✅ Ya | ID dokumen unik yang akan diperiksa statusnya. |
 
 **Contoh Permintaan (Request)**
@@ -490,16 +493,16 @@ Authorization: Bearer TOKEN_ANDA
 
 **Informasi Teknis**
 
-| Detail | Nilai |
-| :--- | :--- |
-| **Method** | `GET` |
-| **URL** | `/api/sign-language-certs/{documentId}/file` |
-| **Keamanan** | 🔒 Bearer Token wajib disertakan |
+| Detail       | Nilai                                        |
+| :----------- | :------------------------------------------- |
+| **Method**   | `GET`                                        |
+| **URL**      | `/api/sign-language-certs/{documentId}/file` |
+| **Keamanan** | 🔒 Bearer Token wajib disertakan             |
 
 **Parameter Path (URL)**
 
-| Parameter | Tipe | Wajib | Penjelasan |
-| :--- | :--- | :--- | :--- |
+| Parameter    | Tipe          | Wajib | Penjelasan                                     |
+| :----------- | :------------ | :---- | :--------------------------------------------- |
 | `documentId` | string (UUID) | ✅ Ya | ID dokumen unik sertifikat yang ingin diunduh. |
 
 **Contoh Permintaan (Request)**
@@ -511,6 +514,7 @@ Authorization: Bearer TOKEN_ANDA
 ```
 
 **Response Jika Berhasil (`200 OK`)**
+
 - **Content-Type:** `application/pdf`
 - **Body:** Data binary file PDF (Dapat disimpan langsung menjadi file fisik `.pdf`).
 
@@ -528,15 +532,15 @@ Authorization: Bearer TOKEN_ANDA
 
 Berikut adalah daftar kode status HTTP yang mungkin Anda terima dari API serta solusi penanganannya:
 
-| Kode Status | Keterangan | Arti / Penyebab | Solusi Penanganan |
-| :--- | :--- | :--- | :--- |
-| `200` | OK | Permintaan Anda berhasil dieksekusi. | Dokumen berhasil dibuat/diambil. |
-| `400` | Bad Request | Terjadi kesalahan logika (misal: mengunduh file yang masih antre). | Periksa status dokumen terlebih dahulu sebelum mengunduh. |
-| `401` | Unauthorized | Token autentikasi hilang atau kadaluarsa. | Perbarui token akses Anda di bagian Header. |
-| `403` | Forbidden | Anda tidak memiliki hak akses (`permissions`) yang tepat. | Mintalah administrator untuk menambahkan permission yang sesuai. |
-| `404` | Not Found | UUID dokumen tidak ditemukan di database. | Pastikan `documentId` yang Anda kirimkan sudah benar. |
-| `422` | Unprocessable Entity | Parameter data yang dikirim tidak lolos validasi. | Baca objek `errors` untuk melihat parameter yang salah. |
-| `500` | Internal Server Error | Terjadi kegagalan sistem pada server. | Laporkan ke tim developer Teken Heula dengan menyertakan log request. |
+| Kode Status | Keterangan            | Arti / Penyebab                                                    | Solusi Penanganan                                                     |
+| :---------- | :-------------------- | :----------------------------------------------------------------- | :-------------------------------------------------------------------- |
+| `200`       | OK                    | Permintaan Anda berhasil dieksekusi.                               | Dokumen berhasil dibuat/diambil.                                      |
+| `400`       | Bad Request           | Terjadi kesalahan logika (misal: mengunduh file yang masih antre). | Periksa status dokumen terlebih dahulu sebelum mengunduh.             |
+| `401`       | Unauthorized          | Token autentikasi hilang atau kadaluarsa.                          | Perbarui token akses Anda di bagian Header.                           |
+| `403`       | Forbidden             | Anda tidak memiliki hak akses (`permissions`) yang tepat.          | Mintalah administrator untuk menambahkan permission yang sesuai.      |
+| `404`       | Not Found             | UUID dokumen tidak ditemukan di database.                          | Pastikan `documentId` yang Anda kirimkan sudah benar.                 |
+| `422`       | Unprocessable Entity  | Parameter data yang dikirim tidak lolos validasi.                  | Baca objek `errors` untuk melihat parameter yang salah.               |
+| `500`       | Internal Server Error | Terjadi kegagalan sistem pada server.                              | Laporkan ke tim developer Teken Heula dengan menyertakan log request. |
 
 ---
 
@@ -545,6 +549,7 @@ Berikut adalah daftar kode status HTTP yang mungkin Anda terima dari API serta s
 Skenario integrasi dari awal pendaftaran dokumen hingga berhasil diunduh ke komputer Anda menggunakan perintah `cURL`:
 
 ### Langkah 1: Daftarkan Dokumen Baru
+
 Kirim dokumen sertifikat asli untuk memulai proses antrean penandatanganan.
 
 ```bash
@@ -575,18 +580,22 @@ curl -X POST "https://tekenheula.upi.edu/api/sign-language-certs" \
     ]
   }'
 ```
-*Catatan: Simpan string UUID `document_id` dari data response yang dikembalikan.*
+
+_Catatan: Simpan string UUID `document_id` dari data response yang dikembalikan._
 
 ### Langkah 2: Pantau Perkembangan Status
-Karena proses berjalan secara latar belakang (*asynchronous*), lakukan pengecekan status secara berkala (misal tiap 5 detik).
+
+Karena proses berjalan secara latar belakang (_asynchronous_), lakukan pengecekan status secara berkala (misal tiap 5 detik).
 
 ```bash
 curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090" \
   -H "Authorization: Bearer PROSES_TOKEN_RAHASIA"
 ```
-*Tunggu hingga parameter `eseal_status` berubah dari `"not_yet_sealed"` menjadi `"sealed"` dan status timeline level 3 bernilai `is_completed: true`.*
+
+_Tunggu hingga parameter `eseal_status` berubah dari `"not_yet_sealed"` menjadi `"sealed"` dan status timeline level 3 bernilai `is_completed: true`._
 
 ### Langkah 3: Unduh PDF yang Sudah Ditandatangani
+
 Jika status pengecekan sudah selesai (`sealed`), unduh berkas PDF fisik Anda.
 
 ```bash

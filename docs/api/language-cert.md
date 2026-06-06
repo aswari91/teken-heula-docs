@@ -1,13 +1,16 @@
-# API Dokumentasi - Sign Language Certificate
+# Referensi API Core (E-Sign & E-Seal Massal)
 
-Dokumen ini menjelaskan API untuk membuat, memperbarui, dan mengambil data sign language certificate.
+API Teken Heula menggunakan arsitektur RESTful dengan format pertukaran data JSON. Karena dirancang untuk kebutuhan **massal (bulk)**, proses penandatanganan dan penyegelan berjalan secara *asynchronous* menggunakan sistem antrean (*queue*) di *backend*.
 
-## Base URL
+## 🌍 Konfigurasi Global
 
-Gunakan base URL sesuai environment, contoh:
+### Base URL
+Semua endpoint API diakses melalui root URL berikut:
 
-`https://tekenheula.upi.edu/api` (production)
-`http://localhost:8000/api` (development)
+```http
+https://tekenheula.upi.edu/api (production)
+http://localhost:8000/api (development)
+```
 
 ## Authentication & Authorization
 

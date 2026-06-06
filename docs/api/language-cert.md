@@ -1,6 +1,6 @@
 # Referensi API Language Cert
 
-API Teken Heula menggunakan arsitektur RESTful dengan format pertukaran data JSON. Karena dirancang untuk kebutuhan **massal (bulk)**, proses penandatanganan dan penyegelan berjalan secara *asynchronous* menggunakan sistem antrean (*queue*) di *backend*.
+Dokumen ini berisi spesifikasi RESTful API untuk menerbitkan, memperbarui, dan mengunduh Sertifikat Bahasa (*Language Cert*). Mengingat sertifikat sering diterbitkan secara massal (*bulk*), proses pembubuhan tanda tangan elektronik (*e-sign*) dan segel elektronik (*e-seal*) akan berjalan secara *asynchronous* melalui sistem antrean (*queue*) di latar belakang guna memastikan performa server yang optimal.
 
 ## 🌍 Konfigurasi Global
 

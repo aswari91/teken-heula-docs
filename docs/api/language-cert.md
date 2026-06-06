@@ -34,13 +34,13 @@ http://localhost:8000/api (development)
 
 - `nip` (string, wajib)
 
-`nip` harus terdaftar sebagai user yang memiliki relasi e-seal.
+`nip` pegawai harus terdaftar di sistem Sinergi UPI.
 
 ### Array `esign`
 
 - Wajib berupa array dengan jumlah minimal 1 dan maksimal 1 item.
 - Setiap item memiliki:
-    - `nip` (string, wajib, tidak boleh duplikat) nip penandatangan yang harus terdaftar sebagai user dengan relasi e-sign.
+    - `nip` (string, wajib, tidak boleh duplikat) nip penandatangan harus terdaftar di sistem Sinergi UPI.
     - `order` (integer, wajib, min 1, distinct) urutan tanda tangan jika ada lebih dari 1 penandatangan.
     - `signature_properties` (object, wajib)
         - `tag` (string, wajib, tidak boleh duplikat)

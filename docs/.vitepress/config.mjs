@@ -21,7 +21,10 @@ export default withMermaid(
       sidebar: [
         {
           text: "Pengenalan",
-          items: [{ text: "Apa itu Teken Heula?", link: "/api/pengantar" }],
+          items: [
+            { text: "Apa itu Teken Heula?", link: "/api/pengantar" },
+            { text: "Autentikasi & Keamanan", link: "/api/autentikasi" },
+          ],
         },
         {
           text: "API Reference",

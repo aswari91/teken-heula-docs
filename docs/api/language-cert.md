@@ -71,6 +71,9 @@ Accept: application/json
 
 ## Keamanan (Authentication & Authorization)
 
+> [!NOTE]
+> Panduan lengkap mengenai cara mendapatkan token akses dan mematuhinya secara aman dapat dibaca di halaman [Autentikasi & Keamanan](./autentikasi.md).
+
 Sistem Teken Heula menerapkan otorisasi ketat berbasis peran (*role-based permissions*) untuk memastikan hanya pihak yang berhak yang dapat memproses dokumen sertifikat.
 
 ### Lapisan 1 — Autentikasi (Siapa Anda?)

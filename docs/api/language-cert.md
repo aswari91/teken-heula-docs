@@ -16,8 +16,6 @@ layout: doc
 > [!NOTE]
 > Proses penandatanganan dan pembubuhan segel digital berjalan secara _asynchronous_. Dokumen tidak langsung siap seketika setelah API dipanggil. Dokumen Anda akan masuk ke dalam antrean (_queue_) sistem untuk diproses secara berurutan di latar belakang guna menjaga performa server tetap optimal.
 
----
-
 ## Alur Kerja
 
 Berikut adalah gambaran perjalanan dokumen sejak pertama kali dikirimkan hingga siap Anda unduh:
@@ -31,8 +29,6 @@ flowchart TD
     E --> F["6. Unduh PDF<br>(GET .../file)"]
 ```
 
----
-
 ## Sebelum Memulai
 
 Pastikan sistem Anda telah menyiapkan data dan persyaratan berikut sebelum berinteraksi dengan API:
@@ -44,8 +40,6 @@ Pastikan sistem Anda telah menyiapkan data dan persyaratan berikut sebelum berin
 | 👤 **NIP E-Sign**            | NIP penandatangan dokumen yang **wajib terdaftar** di sistem Sinergi UPI.          |
 | 📄 **File PDF (Base64)**     | Dokumen sertifikat asli berformat PDF yang telah dikonversi ke string Base64.      |
 | 🖼️ **Tanda Tangan (Base64)** | Gambar tanda tangan berformat PNG/JPG yang telah dikonversi ke string Base64.      |
-
----
 
 ## Informasi Umum
 
@@ -67,8 +61,6 @@ Authorization: Bearer <TOKEN_AKSES_ANDA>
 Content-Type: application/json
 Accept: application/json
 ```
-
----
 
 ## Keamanan (Authentication & Authorization)
 
@@ -100,8 +92,6 @@ Meskipun token Anda valid, tindakan Anda tetap dibatasi oleh izin (_permission_)
 >
 > - **`401 Unauthorized`**: Terjadi jika token tidak disertakan, salah, atau telah kadaluarsa. Silakan periksa kembali penulisan token Anda.
 > - **`403 Forbidden`**: Terjadi jika token valid tetapi akun Anda tidak memiliki hak akses (_permission_) untuk melakukan tindakan tersebut. Silakan hubungi Administrator sistem untuk penyesuaian hak akses.
-
----
 
 ## Struktur Data
 
@@ -156,8 +146,6 @@ Setiap item di dalam array `esign` harus memiliki properti berikut:
 >   [Convert]::ToBase64String([IO.File]::ReadAllBytes("nama_file.pdf"))
 >   ```
 
----
-
 ## Daftar Endpoint
 
 ### 1. Create Certificate
@@ -183,12 +171,12 @@ Content-Type: application/json
 {
   "doc": {
     "certificate_number": "CERT-2026-001",
-    "participant_name": "Budi Santoso",
-    "institution": "Dinas Pendidikan",
+    "participant_name": "Nama Peserta",
+    "institution": "Institusi Peserta",
     "file_base64": "JVBERi0xLjc..."
   },
   "eseal": {
-    "nip": "198900000001"
+    "nip": "NIP yang akan membubuhkan segel digital"
   },
   "esign": [
     {
@@ -219,12 +207,12 @@ Content-Type: application/json
     "doc": {
       "document_id": "3a8d5c62-3f8f-4fc9-b6bc-079f2a174090",
       "certificate_number": "CERT-2026-001",
-      "participant_name": "Budi Santoso",
-      "institution": "Dinas Pendidikan",
+      "participant_name": "Nama Peserta",
+      "institution": "Institusi Peserta",
       "eseal_status": "not_yet_sealed"
     },
     "eseal": {
-      "nip": "198900000001",
+      "nip": "NIP yang akan membubuhkan segel digital",
       "name": "Nama Pemilik Eseal"
     },
     "esign": [
@@ -279,8 +267,6 @@ Content-Type: application/json
   }
 }
 ```
-
----
 
 ### 2. Update Certificate
 
@@ -393,8 +379,6 @@ Content-Type: application/json
 }
 ```
 
----
-
 ### 3. Get Certificate Detail
 
 > **Digunakan untuk memantau status pengerjaan sertifikat serta melacak alur _timeline_ proses segel digital dan tanda tangan.**
@@ -485,8 +469,6 @@ Authorization: Bearer TOKEN_ANDA
 }
 ```
 
----
-
 ### 4. Download Certificate PDF
 
 > **Mengunduh file PDF hasil penandatanganan digital secara langsung dalam bentuk binary stream.**
@@ -526,8 +508,6 @@ Authorization: Bearer TOKEN_ANDA
 }
 ```
 
----
-
 ## Kode Error & Cara Mengatasinya
 
 Berikut adalah daftar kode status HTTP yang mungkin Anda terima dari API serta solusi penanganannya:
@@ -541,8 +521,6 @@ Berikut adalah daftar kode status HTTP yang mungkin Anda terima dari API serta s
 | `404`       | Not Found             | UUID dokumen tidak ditemukan di database.                          | Pastikan `documentId` yang Anda kirimkan sudah benar.                 |
 | `422`       | Unprocessable Entity  | Parameter data yang dikirim tidak lolos validasi.                  | Baca objek `errors` untuk melihat parameter yang salah.               |
 | `500`       | Internal Server Error | Terjadi kegagalan sistem pada server.                              | Laporkan ke tim developer Teken Heula dengan menyertakan log request. |
-
----
 
 ## Contoh Integrasi Lengkap
 
@@ -603,8 +581,6 @@ curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/3a8d5c62-3f8f-4f
   -H "Authorization: Bearer PROSES_TOKEN_RAHASIA" \
   --output sertifikat_budi_santoso.pdf
 ```
-
----
 
 ## Pertanyaan Umum (FAQ)
 

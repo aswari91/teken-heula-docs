@@ -33,3 +33,13 @@
     --vp-home-hero-image-filter: blur(96px);
   }
 }
+
+/* Fix Mermaid node text clipping / cut-off */
+.mermaid foreignObject {
+  overflow: visible !important;
+}
+
+.mermaid foreignObject div {
+  line-height: 1.3 !important;
+}
+

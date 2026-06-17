@@ -7,7 +7,7 @@ export default withMermaid(
     title: "Teken Heula API",
     description: "Dokumentasi Resmi API Sistem E-Sign & E-Seal",
     base: "/docs/",
-    appearance: 'dark',
+    appearance: "dark",
     themeConfig: {
       siteTitle: false,
       logo: {
@@ -29,12 +29,18 @@ export default withMermaid(
         },
         {
           text: "API Reference",
-          items: [{ text: "Language Cert", link: "/api/language-cert" }],
+          items: [
+            { text: "Language Cert", link: "/api/language-cert" },
+            { text: "Mandala", link: "/api/mandala" },
+          ],
         },
       ],
 
       socialLinks: [
-        { icon: "github", link: "https://github.com/aswari91/teken-heula-docs" },
+        {
+          icon: "github",
+          link: "https://github.com/aswari91/teken-heula-docs",
+        },
       ],
 
       search: {
@@ -47,5 +53,5 @@ export default withMermaid(
           "Copyright © 2026 Direktorat Sistem Teknologi Informasi dan Pusat Data - UPI",
       },
     },
-  })
+  }),
 );

@@ -9,7 +9,7 @@ layout: doc
 **Yang bisa Anda lakukan dengan API ini:**
 
 - ✅ Mendaftarkan pengajuan sertifikat bahasa baru.
-- ✅ Memperbarui data sertifikat (merevisi isi dokumen atau tanda tangan jika belum selesai diproses).
+- ✅ Memperbarui data sertifikat secara sebagian (_partial update_) — cukup kirim field yang ingin diubah, kapan pun, tanpa mengganggu status segel/tanda tangan yang sudah berjalan atau selesai (kecuali file, petugas segel, atau penandatangan ikut diganti).
 - ✅ Memantau status antrean sertifikat secara berkala (_real-time status check_).
 - ✅ Mengunduh hasil akhir dokumen dalam format PDF yang telah disegel dan ditandatangani.
 
@@ -95,14 +95,19 @@ Meskipun token Anda valid, tindakan Anda tetap dibatasi oleh izin (_permission_)
 
 ## Struktur Data
 
+> [!NOTE]
+> Kolom **Wajib** pada tabel-tabel di bawah ini berlaku untuk endpoint **Create** (`POST`). Untuk endpoint **Update** (`PUT`), seluruh field bersifat **opsional** — Anda hanya perlu mengirim field yang ingin diubah. Namun, jika Anda menyertakan objek `eseal` atau `esign` sama sekali, seluruh sub-field wajib di dalamnya (misalnya `eseal.nip`, atau `esign[].nip`/`order`/`signature_properties`) tetap harus lengkap seperti biasa.
+
 ### 1. Objek Utama `doc` (Informasi Sertifikat)
 
-| Parameter            | Tipe   | Wajib | Batasan          | Penjelasan                                                  |
-| :------------------- | :----- | :---- | :--------------- | :---------------------------------------------------------- |
-| `certificate_number` | string | ✅ Ya | Max 255 karakter | Nomor unik sertifikat. Contoh: `"CERT-2026-001"`            |
-| `participant_name`   | string | ✅ Ya | Max 255 karakter | Nama lengkap penerima sertifikat.                           |
-| `institution`        | string | ✅ Ya | Max 255 karakter | Nama instansi atau lembaga penerima.                        |
-| `file_base64`        | string | ✅ Ya | PDF Base64 valid | String dokumen PDF asli yang telah diubah ke format Base64. |
+| Parameter                      | Tipe   | Wajib    | Batasan          | Penjelasan                                                  |
+| :----------------------------- | :----- | :------- | :--------------- | :---------------------------------------------------------- |
+| `certificate_number`           | string | ✅ Ya    | Max 255 karakter | Nomor unik sertifikat. Contoh: `"CERT-2026-001"`            |
+| `certificate_sequence_number`  | string | Opsional | Max 255 karakter | Nomor urut sertifikat. Contoh: `"045/UN40.X/2026"`          |
+| `service_type`                 | string | Opsional | Max 255 karakter | Jenis layanan sertifikat. Contoh: `"Uji Kemahiran Berbahasa Indonesia"` |
+| `participant_name`             | string | ✅ Ya    | Max 255 karakter | Nama lengkap penerima sertifikat.                           |
+| `institution`                  | string | ✅ Ya    | Max 255 karakter | Nama instansi atau lembaga penerima.                        |
+| `file_base64`                  | string | ✅ Ya    | PDF Base64 valid | String dokumen PDF asli yang telah diubah ke format Base64. |
 
 ### 2. Objek `eseal` (Segel Digital Instansi)
 
@@ -171,6 +176,8 @@ Content-Type: application/json
 {
   "doc": {
     "certificate_number": "CERT-2026-001",
+    "certificate_sequence_number": "045/UN40.X/2026",
+    "service_type": "Uji Kemahiran Berbahasa Indonesia",
     "participant_name": "Nama Peserta",
     "institution": "Institusi Peserta",
     "file_base64": "JVBERi0xLjc..."
@@ -197,6 +204,8 @@ Content-Type: application/json
 
 > [!NOTE]
 > Jika Anda mengirimkan parameter `document_id` di dalam JSON request saat pembuatan, sistem akan mengabaikannya secara otomatis karena ID dokumen baru selalu dibuat oleh server.
+>
+> `certificate_sequence_number` dan `service_type` bersifat **opsional**. Jika tidak dikirimkan, kedua field ini akan bernilai `null` pada response.
 
 **Response Jika Berhasil (`200 OK`)**
 
@@ -207,6 +216,8 @@ Content-Type: application/json
     "doc": {
       "document_id": "3a8d5c62-3f8f-4fc9-b6bc-079f2a174090",
       "certificate_number": "CERT-2026-001",
+      "certificate_sequence_number": "045/UN40.X/2026",
+      "service_type": "Uji Kemahiran Berbahasa Indonesia",
       "participant_name": "Nama Peserta",
       "institution": "Institusi Peserta",
       "eseal_status": "not_yet_sealed"
@@ -272,7 +283,38 @@ Content-Type: application/json
 
 > **Digunakan untuk mengubah atau merevisi data sertifikat yang telah didaftarkan sebelumnya.**
 >
-> _Catatan Perilaku:_ API ini berguna jika terjadi kesalahan input atau revisi dokumen sebelum proses penandatanganan selesai. Jika file PDF (`file_base64`) diubah, maka status verifikasi sebelumnya (`eseal_status`) akan di-reset kembali ke awal (`not_yet_sealed`) dan seluruh antrean pengerjaan dokumen ini akan diproses ulang demi menjaga validitas integritas data.
+> _Catatan Perilaku:_ Endpoint ini mendukung **pembaruan sebagian (partial update)**. Anda hanya perlu mengirimkan field yang ingin diubah — field yang tidak Anda sertakan akan tetap menggunakan nilai lama yang sudah tersimpan, tidak akan ditimpa maupun dikosongkan.
+
+> [!IMPORTANT]
+> **Kapan status proses (e-seal/e-sign) akan di-reset ulang?**
+>
+> Status segel & tanda tangan (`eseal_status`, waktu penyegelan/penandatanganan, IP, dan seluruh data penandatangan) hanya akan direset kembali ke awal (`not_yet_sealed`) **jika** permintaan Anda menyertakan salah satu dari:
+>
+> - `doc.file_base64` — mengganti file PDF
+> - `eseal` — mengganti NIP petugas segel
+> - `esign` — mengganti daftar penandatangan
+>
+> Jika Anda hanya mengubah field lain (misalnya `participant_name`, `institution`, `certificate_number`, `certificate_sequence_number`, atau `service_type`) tanpa menyertakan tiga hal di atas, status proses yang sudah berjalan — atau bahkan **sudah selesai sepenuhnya** — tidak akan ikut terganggu maupun diulang dari awal.
+
+> [!WARNING]
+>
+> - Permintaan **wajib** menyertakan minimal salah satu dari `doc`, `eseal`, atau `esign`. Body kosong (`{}`) akan ditolak dengan `422 Unprocessable Entity`.
+> - Jika dokumen sedang **dalam antrean proses** (`in_queue`) dan permintaan Anda menyertakan `doc.file_base64`, `eseal`, atau `esign`, permintaan akan ditolak dengan `422 Unprocessable Entity` untuk mencegah konflik dengan proses yang sedang berjalan di latar belakang. Field lain (di luar tiga itu) tetap bisa diubah meski dokumen sedang antre.
+
+> [!TIP]
+> **Jaringan/Firewall Anda memblokir method `PUT`?**
+>
+> Sebagian jaringan (reverse proxy, WAF, load balancer) membatasi method HTTP selain `GET`/`POST` dan akan menolak permintaan `PUT` dengan `403 Forbidden` di level jaringan — bukan dari aplikasi Teken Heula. Jika ini terjadi, kirim permintaan sebagai `POST` ke path yang sama dengan menambahkan header `X-HTTP-Method-Override: PUT`. Server akan tetap memprosesnya sebagai permintaan `PUT` yang sesungguhnya.
+>
+> ```http
+> POST /api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
+> Host: tekenheula.upi.edu
+> Authorization: Bearer TOKEN_ANDA
+> Content-Type: application/json
+> X-HTTP-Method-Override: PUT
+>
+> { "doc": { "participant_name": "Nama Baru" } }
+> ```
 
 **Informasi Teknis**
 
@@ -288,7 +330,9 @@ Content-Type: application/json
 | :----------- | :------------ | :---- | :--------------------------------------------------------------- |
 | `documentId` | string (UUID) | ✅ Ya | ID dokumen unik yang diperoleh pada saat pembuatan pertama kali. |
 
-**Contoh Permintaan (Request)**
+**Contoh 1 — Update Lengkap (mengganti file, segel, dan tanda tangan sekaligus)**
+
+> Karena permintaan ini menyertakan `doc.file_base64`, `eseal`, dan `esign`, status proses akan direset ke `not_yet_sealed` dan seluruh dokumen diproses ulang dari awal.
 
 ```http
 PUT /api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
@@ -299,6 +343,8 @@ Content-Type: application/json
 {
   "doc": {
     "certificate_number": "CERT-2026-001-REV",
+    "certificate_sequence_number": "045/UN40.X/2026",
+    "service_type": "Uji Kemahiran Berbahasa Indonesia",
     "participant_name": "Budi Santoso",
     "institution": "Dinas Pendidikan Provinsi",
     "file_base64": "JVBERi0xLjc..."
@@ -332,6 +378,8 @@ Content-Type: application/json
     "doc": {
       "document_id": "3a8d5c62-3f8f-4fc9-b6bc-079f2a174090",
       "certificate_number": "CERT-2026-001-REV",
+      "certificate_sequence_number": "045/UN40.X/2026",
+      "service_type": "Uji Kemahiran Berbahasa Indonesia",
       "participant_name": "Budi Santoso",
       "institution": "Dinas Pendidikan Provinsi",
       "eseal_status": "not_yet_sealed"
@@ -379,6 +427,104 @@ Content-Type: application/json
 }
 ```
 
+**Contoh 2 — Update Sebagian (Partial Update), hanya mengubah nama peserta**
+
+> Permintaan ini **tidak** menyertakan `doc.file_base64`, `eseal`, maupun `esign`, sehingga status proses yang sudah selesai (`sealed`) tetap dipertahankan apa adanya.
+
+```http
+PUT /api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
+Host: tekenheula.upi.edu
+Authorization: Bearer TOKEN_ANDA
+Content-Type: application/json
+
+{
+  "doc": {
+    "participant_name": "Budi Santoso Wijaya"
+  }
+}
+```
+
+**Response Jika Berhasil (`200 OK`)**
+
+```json
+{
+  "message": "Sign language certificate updated successfully.",
+  "data": {
+    "doc": {
+      "document_id": "3a8d5c62-3f8f-4fc9-b6bc-079f2a174090",
+      "certificate_number": "CERT-2026-001-REV",
+      "certificate_sequence_number": "045/UN40.X/2026",
+      "service_type": "Uji Kemahiran Berbahasa Indonesia",
+      "participant_name": "Budi Santoso Wijaya",
+      "institution": "Dinas Pendidikan Provinsi",
+      "eseal_status": "sealed"
+    },
+    "eseal": { "nip": "198900000001", "name": "Nama Pemilik Eseal" },
+    "esign": [
+      {
+        "nip": "198900000002",
+        "name": "Nama Penandatangan",
+        "order": 1,
+        "signature_properties": {
+          "tag": "#",
+          "imageBase64": "iVBORw0KGgo...",
+          "width": 75,
+          "height": 75,
+          "reason": "Sebagai persetujuan kelayakan sertifikat (Revisi)",
+          "location": "Bandung"
+        }
+      }
+    ],
+    "latest_timeline_status": [
+      {
+        "level": 1,
+        "status": "Document successfully submitted",
+        "is_completed": true,
+        "completed_at": "2026-06-06 20:15:00"
+      },
+      {
+        "level": 2,
+        "status": "Document sealed",
+        "is_completed": true,
+        "completed_at": "2026-06-06 20:16:02"
+      },
+      {
+        "level": 3,
+        "status": "Document e-signed",
+        "is_completed": true,
+        "completed_at": "2026-06-06 20:16:45"
+      }
+    ]
+  }
+}
+```
+
+**Response Jika Body Kosong (`422 Unprocessable Entity`)**
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "doc": ["Minimal satu field (doc, eseal, atau esign) harus diisi untuk update."]
+  }
+}
+```
+
+**Response Jika Dokumen Sedang Dalam Antrean Proses (`422 Unprocessable Entity`)**
+
+> Terjadi jika Anda mencoba mengirim `doc.file_base64`, `eseal`, atau `esign` sementara dokumen berstatus `in_queue` (sedang disegel/ditandatangani di latar belakang).
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "doc": [
+      "Dokumen sedang dalam antrean proses e-seal/e-sign dan tidak dapat diubah (file, eseal, atau esign) sampai proses selesai atau dibatalkan."
+    ]
+  }
+}
+```
+
 ### 3. Get Certificate Detail
 
 > **Digunakan untuk memantau status pengerjaan sertifikat serta melacak alur _timeline_ proses segel digital dan tanda tangan.**
@@ -414,6 +560,8 @@ Authorization: Bearer TOKEN_ANDA
     "doc": {
       "document_id": "3a8d5c62-3f8f-4fc9-b6bc-079f2a174090",
       "certificate_number": "CERT-2026-001-REV",
+      "certificate_sequence_number": "045/UN40.X/2026",
+      "service_type": "Uji Kemahiran Berbahasa Indonesia",
       "participant_name": "Budi Santoso",
       "institution": "Dinas Pendidikan Provinsi",
       "eseal_status": "sealed"
@@ -537,6 +685,8 @@ curl -X POST "https://tekenheula.upi.edu/api/sign-language-certs" \
   -d '{
     "doc": {
       "certificate_number": "CERT-2026-001",
+      "certificate_sequence_number": "045/UN40.X/2026",
+      "service_type": "Uji Kemahiran Berbahasa Indonesia",
       "participant_name": "Budi Santoso",
       "institution": "Dinas Pendidikan",
       "file_base64": "JVBERi0xLjc..."
@@ -588,7 +738,10 @@ curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/3a8d5c62-3f8f-4f
 Waktu pengerjaan bergantung pada beban antrean server UPI. Normalnya proses pembubuhan segel digital (e-seal) dan tanda tangan (e-sign) selesai dalam waktu 5 hingga 30 detik sejak dokumen diajukan.
 
 **❓ Apakah saya bisa melakukan revisi data jika status dokumen masih dalam proses antrean?**
-Bisa. Gunakan endpoint **PUT (Update)**. Proses pengerjaan dokumen yang lama akan dibatalkan, lalu dokumen versi baru akan dimasukkan kembali dari awal antrean.
+Tergantung field yang direvisi. Jika Anda hanya mengubah metadata (misal `participant_name`, `institution`) dan **tidak** menyertakan `doc.file_base64`/`eseal`/`esign`, revisi bisa langsung dilakukan meski dokumen sedang antre. Namun jika Anda perlu mengganti file PDF, petugas segel, atau penandatangan sementara dokumen berstatus `in_queue`, permintaan akan ditolak (`422`) — tunggu proses saat ini selesai terlebih dahulu, baru kirim ulang PUT dengan field yang ingin diganti; proses pengerjaan lama akan dibatalkan dan dokumen versi baru dimasukkan kembali dari awal antrean.
+
+**❓ Apakah saya wajib mengirim seluruh field setiap kali melakukan update?**
+Tidak. Endpoint **PUT (Update)** mendukung pembaruan sebagian (_partial update_) — cukup kirim field yang ingin diubah. Field yang tidak disertakan akan tetap memakai nilai lama, dan status segel/tanda tangan tidak akan direset kecuali Anda menyertakan `doc.file_base64`, `eseal`, atau `esign`.
 
 **❓ Mengapa file PDF hasil download tidak dapat dibuka atau korup?**
 Masalah ini biasanya disebabkan string `file_base64` yang dikirimkan saat Create/Update tidak lengkap atau format konversinya tidak valid. Pastikan string Base64 yang Anda kirimkan murni tanpa prefix format URL (seperti `data:application/pdf;base64,`).

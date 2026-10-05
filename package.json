@@ -7,7 +7,10 @@
     "doc": "docs"
   },
   "scripts": {
+    "docs:ai": "node scripts/build-ai-assets.mjs",
+    "predocs:dev": "npm run docs:ai",
     "docs:dev": "vitepress dev docs",
+    "predocs:build": "npm run docs:ai",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },

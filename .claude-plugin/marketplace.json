@@ -1,0 +1,14 @@
+{
+  "name": "teken-heula",
+  "description": "Plugin Claude Code untuk integrasi API Teken Heula (e-sign/e-seal BSrE UPI).",
+  "owner": {
+    "name": "Direktorat Sistem Teknologi Informasi dan Pusat Data - UPI"
+  },
+  "plugins": [
+    {
+      "name": "teken-heula-api",
+      "source": "./plugins/teken-heula-api",
+      "description": "Skill panduan integrasi API Teken Heula: Language Cert, Mandala, SAKIP, dan e-Planning (RKAT)."
+    }
+  ]
+}

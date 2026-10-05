@@ -25,6 +25,7 @@ export default withMermaid(
           items: [
             { text: "Apa itu Teken Heula?", link: "/api/pengantar" },
             { text: "Autentikasi & Keamanan", link: "/api/autentikasi" },
+            { text: "Integrasi dengan AI", link: "/api/integrasi-ai" },
           ],
         },
         {
@@ -32,6 +33,8 @@ export default withMermaid(
           items: [
             { text: "Language Cert", link: "/api/language-cert" },
             { text: "Mandala", link: "/api/mandala" },
+            { text: "SAKIP", link: "/api/sakip" },
+            { text: "e-Planning (RKAT)", link: "/api/eplanning" },
           ],
         },
       ],
@@ -49,8 +52,7 @@ export default withMermaid(
 
       footer: {
         message: "Dikembangkan oleh",
-        copyright:
-          "Copyright © 2026 Direktorat Sistem Teknologi Informasi dan Pusat Data - UPI",
+        copyright: `Copyright © ${new Date().getFullYear()} Direktorat Sistem Teknologi Informasi dan Pusat Data - UPI`,
       },
     },
   }),

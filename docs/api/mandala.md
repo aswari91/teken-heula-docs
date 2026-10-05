@@ -48,7 +48,7 @@ Seluruh endpoint API dapat diakses menggunakan basis URL berikut sesuai dengan l
 | Lingkungan      | URL                              |
 | :-------------- | :------------------------------- |
 | **Development** | `http://localhost:8000/api`      |
-| **Production**  | `https://tekenheula.upi.edu/api` |
+| **Production**  | `https://teken.upi.edu/api` |
 
 ### Header Wajib
 
@@ -155,7 +155,7 @@ Setiap item di dalam array `esign` harus memiliki properti berikut:
 
 ```http
 POST /api/sign-mandala HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 Content-Type: application/json
 
@@ -274,7 +274,7 @@ Content-Type: application/json
 
 ```http
 PUT /api/sign-mandala/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 Content-Type: application/json
 
@@ -372,7 +372,7 @@ Content-Type: application/json
 
 ```http
 GET /api/sign-mandala/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 ```
 
@@ -455,7 +455,7 @@ Authorization: Bearer TOKEN_ANDA
 
 ```http
 GET /api/sign-mandala/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090/file HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 ```
 
@@ -495,7 +495,7 @@ Skenario integrasi dari awal pendaftaran dokumen hingga berhasil diunduh ke komp
 Kirim dokumen asli untuk memulai proses antrean penandatanganan.
 
 ```bash
-curl -X POST "https://tekenheula.upi.edu/api/sign-mandala" \
+curl -X POST "https://teken.upi.edu/api/sign-mandala" \
   -H "Authorization: Bearer PROSES_TOKEN_RAHASIA" \
   -H "Content-Type: application/json" \
   -d '{
@@ -528,7 +528,7 @@ _Catatan: Simpan string UUID `document_id` dari data response yang dikembalikan.
 Karena proses berjalan secara latar belakang (_asynchronous_), lakukan pengecekan status secara berkala (misal tiap 5 detik).
 
 ```bash
-curl -X GET "https://tekenheula.upi.edu/api/sign-mandala/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090" \
+curl -X GET "https://teken.upi.edu/api/sign-mandala/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090" \
   -H "Authorization: Bearer PROSES_TOKEN_RAHASIA"
 ```
 
@@ -539,7 +539,7 @@ _Tunggu hingga timeline proses e-sign bernilai `is_completed: true`._
 Jika status pengecekan sudah selesai (`finished_signing`), unduh berkas PDF fisik Anda.
 
 ```bash
-curl -X GET "https://tekenheula.upi.edu/api/sign-mandala/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090/file" \
+curl -X GET "https://teken.upi.edu/api/sign-mandala/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090/file" \
   -H "Authorization: Bearer PROSES_TOKEN_RAHASIA" \
   --output dokumen_kerjasama.pdf
 ```

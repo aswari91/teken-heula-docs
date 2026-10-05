@@ -1,0 +1,596 @@
+<!-- Dihasilkan otomatis dari plugins/teken-heula-api/skills/teken-heula-api oleh scripts/build-ai-assets.mjs. Jangan edit manual. -->
+
+# Integrasi API Teken Heula
+
+Teken Heula adalah layanan tanda tangan elektronik (e-sign) dan segel elektronik (e-seal) UPI yang tersertifikasi BSrE. Sistem lain mengirim PDF (base64) via API, dokumen diproses **asynchronous** di antrean server, lalu PDF hasil diunduh.
+
+## Pilih modul yang tepat
+
+| Modul | Untuk dokumen | Endpoint dasar | E-seal? | Penandatangan | Detail |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Language Cert | Sertifikat bahasa (Balai Bahasa) | `/api/sign-language-certs` | ✅ Ya, sebelum e-sign | Tepat 1 | [references/language-cert.md](references/language-cert.md) |
+| Mandala | Surat/dokumen resmi Mandala | `/api/sign-mandala` | ❌ | ≥ 1 | [references/mandala.md](references/mandala.md) |
+| SAKIP | Dokumen akuntabilitas kinerja (Renstra, RKT, PK, LKjIP) | `/api/sign-sakip` | ❌ | ≥ 1, berjenjang | [references/sakip.md](references/sakip.md) |
+| e-Planning | RKAT dari aplikasi e-Planning | `/api/sign-eplanning` | ❌ | ≥ 1, berjenjang | [references/eplanning.md](references/eplanning.md) |
+
+Baca file reference modul yang dipakai sebelum menulis payload — nama field `doc` berbeda per modul. Untuk penanganan error lengkap lihat [references/errors.md](references/errors.md); contoh client siap pakai (Laravel, Node.js, Python) ada di [references/client-examples.md](references/client-examples.md).
+
+## Koneksi
+
+| Lingkungan | Base URL |
+| :-- | :-- |
+| Production | `https://teken.upi.edu/api` |
+| Development (lokal) | `http://localhost:8000/api` |
+
+Header wajib di setiap request:
+
+```http
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+Accept: application/json
+```
+
+- Token didapat dari halaman profil (menu API Token) di aplikasi Teken Heula. Simpan di environment variable (mis. `TEKEN_HEULA_TOKEN`, `TEKEN_HEULA_BASE_URL`) — **jangan pernah hardcode atau commit token**.
+- Token saja tidak cukup: akun juga butuh permission per modul, `ApiCreate:<Doc>`, `ApiUpdate:<Doc>`, `ApiView:<Doc>` dengan `<Doc>` = `DocLanguageCert` / `DocMandala` / `DocSakip` / `DocEplanning`. Tanpa itu → `403`.
+- Rate limit: **200 request/menit per token**. Lebih dari itu → `429`.
+- Selalu kirim `Accept: application/json` supaya error validasi kembali sebagai JSON `422`, bukan redirect HTML.
+
+## Empat endpoint (pola sama di semua modul)
+
+| Aksi | Method & path | Hasil |
+| :-- | :-- | :-- |
+| Ajukan dokumen | `POST /sign-<modul>` | `200` + `data.doc.document_id` (UUID) |
+| Revisi dokumen | `PUT /sign-<modul>/{documentId}` | `200` + data terbaru |
+| Cek status | `GET /sign-<modul>/{documentId}` | `200` + `esign[].status` + `latest_timeline_status` |
+| Unduh PDF | `GET /sign-<modul>/{documentId}/file` | `200` `application/pdf` (binary) |
+
+`{documentId}` harus UUID; selain UUID → `404`.
+
+## Alur integrasi yang benar
+
+1. **POST** dokumen → simpan `data.doc.document_id` di database Anda, terhubung ke record lokal. Ini satu-satunya kunci untuk semua request berikutnya.
+2. **Tunggu proses** (asynchronous). Penandatangan menandatangani lewat panel admin Teken Heula, jadi waktunya bisa menit sampai hari — bukan detik — terutama untuk modul berjenjang.
+3. **Polling GET** status dengan interval wajar (mis. tiap 1–5 menit via scheduler/queue job, bukan loop ketat di request user). Dokumen selesai jika **semua** item `latest_timeline_status` bernilai `is_completed: true` (untuk modul e-sign: semua `esign[].status.value == "finished_signing"`; Language Cert juga `doc.eseal_status == "sealed"`).
+4. **GET .../file** → simpan binary PDF. Jika belum selesai server membalas `400` — perlakukan sebagai "belum siap", bukan kegagalan permanen.
+
+## Aturan payload yang sering salah
+
+- `file_base64` dan `imageBase64` adalah **base64 murni** — tanpa prefix `data:application/pdf;base64,` / `data:image/png;base64,`, tanpa baris baru. PDF harus PDF valid; gambar harus PNG/JPG valid.
+- `esign` adalah **array**, walaupun hanya satu penandatangan.
+- Dalam satu request: `order` harus unik (integer ≥ 1), `nip` tidak boleh duplikat, dan `signature_properties.tag` tidak boleh duplikat.
+- `signature_properties.tag` adalah teks penanda (mis. `#`, `$`) yang **benar-benar ada di dalam PDF** pada posisi tanda tangan; BSrE menaruh tanda tangan di posisi tag tersebut. `width`/`height` numerik ≥ 1 (pixel). `reason`/`location` opsional.
+- `nip` penandatangan/penyegel harus terdaftar di Sinergi (SDM UPI). NIP yang belum dikenal akan disinkronkan otomatis; jika gagal → `422` pada `esign.N.nip` / `eseal.nip`.
+- Jangan kirim `document_id` saat POST — server selalu membuat UUID baru.
+- `PUT` di Mandala/SAKIP/e-Planning adalah **penggantian penuh**: kirim ulang seluruh `doc` dan seluruh `esign`; daftar penandatangan diganti dan urutan dimulai lagi dari `order: 1`. Hanya Language Cert yang mendukung partial update (lihat reference-nya).
+- Jika jaringan memblokir `PUT`, kirim `POST` ke path yang sama dengan header `X-HTTP-Method-Override: PUT`.
+
+## Penanganan error ringkas
+
+| Kode | Arti | Tindakan di kode |
+| :-- | :-- | :-- |
+| `400` | Download sebelum PDF siap | Coba lagi nanti (polling) |
+| `401` | Token hilang/salah/dicabut | Jangan retry; minta token baru, alert ke admin integrasi |
+| `403` | Permission modul tidak ada | Jangan retry; minta admin Teken Heula menambah permission |
+| `404` | `documentId` tidak ada / bukan UUID | Periksa ID yang tersimpan |
+| `422` | Validasi gagal | Baca `errors` (key = path field, mis. `esign.0.nip`), perbaiki payload; jangan retry payload yang sama |
+| `429` | Rate limit | Backoff lalu retry |
+| `5xx` / timeout | Gangguan server | Retry dengan exponential backoff; POST hanya di-retry jika yakin request sebelumnya tidak tercatat (cek dulu, hindari dokumen ganda) |
+
+Respons error berbentuk `{"message": "...", "errors": {"<field>": ["pesan"]}}` (field `errors` hanya untuk `422`). Pesan validasi berbahasa Indonesia.
+
+## Saat menulis kode integrasi
+
+- Bungkus API dalam satu client/service kecil (base URL + token dari config, timeout ~60 detik karena payload base64 besar), lalu pakai dari job/queue — bukan dari request HTTP user secara langsung.
+- Simpan `document_id`, status terakhir, dan waktu cek terakhir di tabel lokal; jadikan proses polling + download idempoten.
+- Jangan log isi `file_base64`, `imageBase64`, atau token. Log cukup `document_id`, kode status, dan `message`.
+- Sesuaikan nama field `doc` dengan modul — contoh: Language Cert memakai `certificate_number`, Mandala memakai `mandala_doc_id`, SAKIP/e-Planning memakai `doc_number` + `doc_information`.
+
+
+<!-- references/client-examples.md -->
+
+# Contoh Client
+
+Contoh di bawah memakai modul e-Planning; ganti path (`sign-eplanning`) dan field `doc` untuk modul lain. Base URL dan token selalu dari environment variable.
+
+```dotenv
+TEKEN_HEULA_BASE_URL=https://teken.upi.edu/api
+TEKEN_HEULA_TOKEN=isi-token-dari-halaman-profil
+```
+
+## Laravel (PHP)
+
+```php
+// config/services.php
+'teken_heula' => [
+    'base_url' => env('TEKEN_HEULA_BASE_URL', 'https://teken.upi.edu/api'),
+    'token' => env('TEKEN_HEULA_TOKEN'),
+],
+```
+
+```php
+namespace App\Services;
+
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Http;
+
+class TekenHeulaClient
+{
+    private function http(): PendingRequest
+    {
+        return Http::baseUrl(config('services.teken_heula.base_url'))
+            ->withToken(config('services.teken_heula.token'))
+            ->acceptJson()
+            ->asJson()
+            ->timeout(60);
+    }
+
+    /**
+     * @param  array{doc_number?: string, doc_information: string, file_base64: string}  $doc
+     * @param  list<array{nip: string, order: int, signature_properties: array<string, mixed>}>  $esign
+     */
+    public function submit(array $doc, array $esign): string
+    {
+        return $this->http()
+            ->post('/sign-eplanning', ['doc' => $doc, 'esign' => $esign])
+            ->throw()
+            ->json('data.doc.document_id');
+    }
+
+    public function status(string $documentId): array
+    {
+        return $this->http()->get("/sign-eplanning/{$documentId}")->throw()->json('data');
+    }
+
+    public function isFinished(array $data): bool
+    {
+        return collect($data['latest_timeline_status'])->every(fn (array $step): bool => $step['is_completed']);
+    }
+
+    /** Returns null while the PDF is not ready yet (HTTP 400). */
+    public function downloadPdf(string $documentId): ?string
+    {
+        $response = $this->http()->accept('application/pdf')->get("/sign-eplanning/{$documentId}/file");
+
+        if ($response->status() === 400) {
+            return null;
+        }
+
+        return $response->throw()->body();
+    }
+}
+```
+
+Pemakaian: kirim dari queue job, simpan `document_id`, lalu jadwalkan job polling (mis. `Schedule::job(...)->everyFiveMinutes()`) yang memanggil `status()` → jika `isFinished()` panggil `downloadPdf()` dan `Storage::put(...)`.
+
+Membuat payload dari file:
+
+```php
+$doc = [
+    'doc_number' => 'RKAT-2027-001',
+    'doc_information' => 'RKAT Tahun Anggaran 2027',
+    'file_base64' => base64_encode(Storage::get('rkat/2027.pdf')),
+];
+
+$esign = [[
+    'nip' => '197709152006041003',
+    'order' => 1,
+    'signature_properties' => [
+        'tag' => '#',
+        'imageBase64' => base64_encode(Storage::get('ttd/197709152006041003.png')),
+        'width' => 75,
+        'height' => 75,
+    ],
+]];
+```
+
+`base64_encode()` sudah menghasilkan base64 murni tanpa prefix dan tanpa baris baru.
+
+## Node.js (fetch, Node 18+)
+
+```js
+const BASE_URL = process.env.TEKEN_HEULA_BASE_URL ?? "https://teken.upi.edu/api";
+const headers = {
+  Authorization: `Bearer ${process.env.TEKEN_HEULA_TOKEN}`,
+  Accept: "application/json",
+  "Content-Type": "application/json",
+};
+
+async function submit(doc, esign) {
+  const res = await fetch(`${BASE_URL}/sign-eplanning`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ doc, esign }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw Object.assign(new Error(body.message), { status: res.status, errors: body.errors });
+  return body.data.doc.document_id;
+}
+
+async function downloadPdf(documentId) {
+  const res = await fetch(`${BASE_URL}/sign-eplanning/${documentId}/file`, { headers });
+  if (res.status === 400) return null; // belum siap
+  if (!res.ok) throw new Error(`Download gagal: ${res.status}`);
+  return Buffer.from(await res.arrayBuffer());
+}
+
+// base64 dari file: fs.readFileSync("rkat.pdf").toString("base64")
+```
+
+## Python (requests)
+
+```python
+import os, requests
+
+BASE_URL = os.environ.get("TEKEN_HEULA_BASE_URL", "https://teken.upi.edu/api")
+session = requests.Session()
+session.headers.update({
+    "Authorization": f"Bearer {os.environ['TEKEN_HEULA_TOKEN']}",
+    "Accept": "application/json",
+})
+
+def submit(doc: dict, esign: list) -> str:
+    res = session.post(f"{BASE_URL}/sign-eplanning", json={"doc": doc, "esign": esign}, timeout=60)
+    res.raise_for_status()
+    return res.json()["data"]["doc"]["document_id"]
+
+def download_pdf(document_id: str) -> bytes | None:
+    res = session.get(f"{BASE_URL}/sign-eplanning/{document_id}/file", timeout=60)
+    if res.status_code == 400:
+        return None  # belum siap
+    res.raise_for_status()
+    return res.content
+
+# base64: base64.b64encode(open("rkat.pdf", "rb").read()).decode()
+```
+
+
+<!-- references/eplanning.md -->
+
+# Modul e-Planning (RKAT)
+
+Endpoint dasar: `/api/sign-eplanning` · Permission: `ApiCreate|ApiUpdate|ApiView:DocEplanning`
+
+Untuk dokumen RKAT (Rencana Kerja dan Anggaran Tahunan) dari aplikasi e-Planning. Hanya e-sign, **penandatanganan berjenjang**. Alur, struktur data, dan validasinya **identik dengan [SAKIP](sakip.md)** — bedanya hanya path, permission, dan teks `message`.
+
+## Payload POST / PUT
+
+```json
+{
+  "doc": {
+    "doc_number": "RKAT-2027-001",
+    "doc_information": "RKAT Tahun Anggaran 2027",
+    "file_base64": "JVBERi0xLjc..."
+  },
+  "esign": [
+    {
+      "nip": "197709152006041003",
+      "order": 1,
+      "signature_properties": { "tag": "#", "imageBase64": "iVBORw0KGgo...", "width": 75, "height": 75, "reason": "Menyusun dokumen", "location": "Bandung" }
+    },
+    {
+      "nip": "199004292015042002",
+      "order": 2,
+      "signature_properties": { "tag": "$", "imageBase64": "iVBORw0KGgo...", "width": 75, "height": 75, "reason": "Menyetujui dokumen", "location": "Bandung" }
+    }
+  ]
+}
+```
+
+| Field | Wajib | Aturan |
+| :-- | :-- | :-- |
+| `doc.doc_number` | – | string ≤ 255, boleh kosong dan boleh duplikat (RKAT bisa diajukan sebelum bernomor) |
+| `doc.doc_information` | ✅ | string ≤ 255 |
+| `doc.file_base64` | ✅ | PDF base64 valid |
+| `esign` | ✅ | array ≥ 1 item; `order` unik, `nip` dan `tag` tidak boleh duplikat |
+
+`signature_properties`: `tag` ✅, `imageBase64` ✅ (PNG/JPG base64), `width` ✅ ≥1, `height` ✅ ≥1, `reason`, `location` opsional.
+
+## Berjenjang
+
+Hanya `order: 1` yang langsung aktif (`not_yet_signed`); penandatangan berikutnya berstatus `null` sampai giliran mereka. Dokumen selesai jika **semua** `esign[].status.value == "finished_signing"` dan timeline level 2 `is_completed: true`.
+
+## PUT
+
+Body lengkap (bukan partial). Daftar penandatangan diganti seluruhnya; urutan mulai lagi dari `order: 1`.
+
+## Response
+
+Bentuk sama dengan SAKIP. Pesan: `"Sign RKAT document created|updated|retrieved successfully."`; tidak ditemukan → `404` `"Sign RKAT document not found."`.
+
+
+<!-- references/errors.md -->
+
+# Error & Cara Menanganinya
+
+Semua error berformat JSON:
+
+```json
+{ "message": "The given data was invalid.", "errors": { "esign.0.nip": ["..."] } }
+```
+
+`errors` hanya ada di `422`; key-nya adalah path field dengan indeks array (`doc.file_base64`, `esign.1.signature_properties.tag`).
+
+| Kode | Penyebab | Retry? | Tindakan |
+| :-- | :-- | :-- | :-- |
+| `400` | `GET .../file` sebelum PDF selesai: `"Dokumen masih dalam antrean proses atau file belum tersedia."` | Ya, nanti | Lanjutkan polling status |
+| `401` | Token tidak dikirim, salah, atau dicabut | Tidak | Perbarui token di konfigurasi; beri alert |
+| `403` | Token valid tapi tidak punya permission `Api*:<Doc>` modul itu; atau jaringan memblokir `PUT` | Tidak | Minta admin Teken Heula menambah permission; jika karena `PUT` diblokir, pakai `POST` + `X-HTTP-Method-Override: PUT` |
+| `404` | `documentId` tidak ditemukan / bukan UUID; atau `"File fisik dokumen tidak ditemukan di server."` saat download | Tidak | Cek ID yang tersimpan; kasus file fisik hilang → laporkan ke tim Teken Heula |
+| `422` | Validasi gagal | Tidak (dengan payload sama) | Perbaiki field sesuai `errors` |
+| `429` | Melebihi 200 request/menit per token | Ya | Backoff (hormati header `Retry-After` jika ada) |
+| `500`/`502`/`503`/timeout | Gangguan server | Ya, terbatas | Exponential backoff; untuk `POST`, cegah dokumen ganda |
+
+## Pesan `422` yang umum
+
+| Field | Pesan | Penyebab |
+| :-- | :-- | :-- |
+| `doc.file_base64` | `doc.file_base64 harus berupa file PDF base64 yang valid.` | Bukan PDF, ada prefix `data:`, terpotong, atau ada baris baru |
+| `esign.N.signature_properties.imageBase64` | `... harus berupa gambar PNG/JPG/JPEG base64 yang valid.` | Gambar bukan PNG/JPG atau base64 rusak |
+| `esign.N.nip` | `esign.N.nip belum terdaftar sebagai pengguna e-sign dan gagal disinkronkan.` | NIP tidak ditemukan di Sinergi (SDM UPI) |
+| `eseal.nip` | `eseal.nip belum terdaftar sebagai pengguna e-seal dan gagal disinkronkan dari Sinergi.` | (Language Cert) NIP bukan pemilik e-seal |
+| `esign.N.nip` | `NIP duplikat pada data esign.` | NIP sama muncul dua kali |
+| `esign.N.signature_properties.tag` | `Tag duplikat pada data esign.` | Dua penandatangan memakai tag sama |
+| `esign.N.order` | `Urutan tanda tangan tidak boleh duplikat.` | `order` sama |
+| `doc.mandala_doc_id` | `Mandala Doc ID sudah digunakan.` | (Mandala) ID referensi sudah dipakai dokumen lain |
+| `document_id` | `document_id yang diberikan tidak ditemukan.` | PUT ke UUID yang tidak ada |
+| `doc` | `Dokumen sedang dalam antrean proses e-seal/e-sign dan tidak dapat diubah ...` | (Language Cert) ganti file/eseal/esign saat `in_queue` |
+| `doc` | `Minimal satu field (doc, eseal, atau esign) harus diisi untuk update.` | (Language Cert) PUT dengan body kosong |
+
+## PDF hasil tidak bisa dibuka
+
+Hampir selalu karena `file_base64` saat POST/PUT tidak valid (terpotong, ada prefix `data:...;base64,`, atau di-encode dua kali). Simpan response download sebagai **binary**, bukan string teks/JSON.
+
+
+<!-- references/language-cert.md -->
+
+# Modul Language Cert (Sertifikat Bahasa)
+
+Endpoint dasar: `/api/sign-language-certs` · Permission: `ApiCreate|ApiUpdate|ApiView:DocLanguageCert`
+
+Satu-satunya modul dengan **e-seal**: dokumen disegel institusi dulu, baru ditandatangani satu pejabat.
+
+## Payload POST
+
+```json
+{
+  "doc": {
+    "certificate_number": "CERT-2026-001",
+    "certificate_sequence_number": "045/UN40.X/2026",
+    "service_type": "Uji Kemahiran Berbahasa Indonesia",
+    "participant_name": "Budi Santoso",
+    "institution": "Dinas Pendidikan Provinsi",
+    "file_base64": "JVBERi0xLjc..."
+  },
+  "eseal": { "nip": "198900000001" },
+  "esign": [
+    {
+      "nip": "198900000002",
+      "order": 1,
+      "signature_properties": {
+        "tag": "#",
+        "imageBase64": "iVBORw0KGgo...",
+        "width": 75,
+        "height": 75,
+        "reason": "Sebagai persetujuan kelayakan sertifikat",
+        "location": "Bandung"
+      }
+    }
+  ]
+}
+```
+
+| Field | Wajib (POST) | Aturan |
+| :-- | :-- | :-- |
+| `doc.certificate_number` | ✅ | string ≤ 255 |
+| `doc.certificate_sequence_number` | – | string ≤ 255, null jika tidak dikirim |
+| `doc.service_type` | – | string ≤ 255, null jika tidak dikirim |
+| `doc.participant_name` | ✅ | string ≤ 255 |
+| `doc.institution` | ✅ | string ≤ 255 |
+| `doc.file_base64` | ✅ | PDF base64 valid |
+| `eseal.nip` | ✅ | NIP pemilik segel; harus pengguna e-seal terdaftar |
+| `esign` | ✅ | **tepat 1 item** (min 1, max 1), `order: 1` |
+
+`signature_properties`: `tag` ✅, `imageBase64` ✅ (PNG/JPG base64), `width` ✅ ≥1, `height` ✅ ≥1, `reason`, `location` opsional.
+
+## PUT — partial update
+
+- Semua field opsional; kirim hanya yang diubah. Body kosong `{}` → `422` (`"Minimal satu field (doc, eseal, atau esign) harus diisi untuk update."`).
+- Jika objek `eseal` atau `esign` dikirim, sub-field wajibnya harus lengkap.
+- Status proses **direset ke awal** (`not_yet_sealed`, penandatangan diganti) hanya jika request berisi `doc.file_base64`, `eseal`, atau `esign`. Mengubah metadata lain (nama, instansi, nomor) tidak mengganggu proses yang berjalan atau sudah selesai.
+- Saat dokumen berstatus antrean (`in_queue`), mengirim `doc.file_base64`/`eseal`/`esign` → `422`; metadata lain tetap boleh diubah.
+
+```json
+{ "doc": { "participant_name": "Budi Santoso Wijaya" } }
+```
+
+## Response (POST/PUT/GET)
+
+```json
+{
+  "message": "Sign language certificate created successfully.",
+  "data": {
+    "doc": {
+      "document_id": "3a8d5c62-3f8f-4fc9-b6bc-079f2a174090",
+      "certificate_number": "CERT-2026-001",
+      "certificate_sequence_number": "045/UN40.X/2026",
+      "service_type": "Uji Kemahiran Berbahasa Indonesia",
+      "participant_name": "Budi Santoso",
+      "institution": "Dinas Pendidikan Provinsi",
+      "eseal_status": "not_yet_sealed"
+    },
+    "eseal": { "nip": "198900000001", "name": "Nama Pemilik Eseal" },
+    "esign": [ { "nip": "198900000002", "name": "Nama Penandatangan", "order": 1, "signature_properties": { "tag": "#", "width": 75, "height": 75 } } ],
+    "latest_timeline_status": [
+      { "level": 1, "status": "Document successfully submitted", "is_completed": true, "completed_at": "2026-06-06 20:00:00" },
+      { "level": 2, "status": "Document sealing in progress", "is_completed": false, "completed_at": null },
+      { "level": 3, "status": "Document e-signing in progress", "is_completed": false, "completed_at": null }
+    ]
+  }
+}
+```
+
+Pesan: `created` / `updated` / `retrieved successfully.`; tidak ditemukan → `404` `"Sign language certificate not found."`.
+
+## Kapan selesai
+
+`doc.eseal_status == "sealed"` **dan** timeline level 3 `is_completed: true` (status menjadi `"Document e-signed"`). Setelah itu `GET .../file` mengembalikan PDF.
+
+
+<!-- references/mandala.md -->
+
+# Modul Mandala
+
+Endpoint dasar: `/api/sign-mandala` · Permission: `ApiCreate|ApiUpdate|ApiView:DocMandala`
+
+Hanya e-sign (tanpa e-seal). Boleh lebih dari satu penandatangan.
+
+## Payload POST / PUT
+
+```json
+{
+  "doc": {
+    "mandala_doc_id": "MNDL-2026-001",
+    "description": "Perjanjian Kerjasama Antar Lembaga",
+    "file_base64": "JVBERi0xLjc..."
+  },
+  "esign": [
+    {
+      "nip": "198900000002",
+      "order": 1,
+      "signature_properties": {
+        "tag": "#",
+        "imageBase64": "iVBORw0KGgo...",
+        "width": 75,
+        "height": 75,
+        "reason": "Menyetujui isi perjanjian",
+        "location": "Bandung"
+      }
+    }
+  ]
+}
+```
+
+| Field | Wajib | Aturan |
+| :-- | :-- | :-- |
+| `doc.mandala_doc_id` | ✅ | string ≤ 255, **unik** — ID referensi dari sistem Anda. Duplikat → `422` `"Mandala Doc ID sudah digunakan."` |
+| `doc.description` | ✅ | string ≤ 255 |
+| `doc.file_base64` | ✅ | PDF base64 valid |
+| `esign` | ✅ | array ≥ 1 item; `order` unik, `nip` dan `tag` tidak boleh duplikat |
+
+`signature_properties`: `tag` ✅, `imageBase64` ✅ (PNG/JPG base64), `width` ✅ ≥1, `height` ✅ ≥1, `reason`, `location` opsional.
+
+## PUT
+
+Body sama lengkapnya dengan POST (bukan partial). Daftar penandatangan lama dihapus dan diganti; proses tanda tangan dimulai ulang dari `order: 1`. `mandala_doc_id` yang sama dengan dokumen ini sendiri boleh dipakai ulang.
+
+## Response
+
+```json
+{
+  "message": "Sign mandala document created successfully.",
+  "data": {
+    "doc": {
+      "document_id": "3a8d5c62-3f8f-4fc9-b6bc-079f2a174090",
+      "mandala_doc_id": "MNDL-2026-001",
+      "description": "Perjanjian Kerjasama Antar Lembaga"
+    },
+    "esign": [
+      {
+        "nip": "198900000002",
+        "name": "Nama Penandatangan",
+        "order": 1,
+        "status": { "id": 1, "value": "not_yet_signed", "label": "Belum Ditandatangani" },
+        "signature_properties": { "tag": "#", "imageBase64": true, "width": 75, "height": 75, "reason": "Menyetujui isi perjanjian", "location": "Bandung" }
+      }
+    ],
+    "latest_timeline_status": [
+      { "level": 1, "status": "Dokumen berhasil diajukan", "is_completed": true, "completed_at": "2026-06-06 20:00:00" },
+      { "level": 2, "status": "Proses e-sign", "is_completed": false, "completed_at": null }
+    ]
+  }
+}
+```
+
+Di response, `imageBase64` hanya `true` (gambar tidak dikirim balik). Pesan: `created` / `updated` / `retrieved successfully.`; tidak ditemukan → `404` `"Sign mandala document not found."`.
+
+## Kapan selesai
+
+Semua `esign[].status.value == "finished_signing"` dan timeline level 2 `is_completed: true` (status `"Dokumen telah di e-sign"`).
+
+
+<!-- references/sakip.md -->
+
+# Modul SAKIP
+
+Endpoint dasar: `/api/sign-sakip` · Permission: `ApiCreate|ApiUpdate|ApiView:DocSakip`
+
+Untuk dokumen akuntabilitas kinerja dari aplikasi SAKIP (Renstra, RKT, Perjanjian Kinerja, LKjIP, dll). Hanya e-sign, **penandatanganan berjenjang**. Struktur dan aturannya identik dengan [e-Planning](eplanning.md) — hanya path dan permission yang berbeda.
+
+## Payload POST / PUT
+
+```json
+{
+  "doc": {
+    "doc_number": "RKT-2026-001",
+    "doc_information": "Rencana Kerja Tahunan 2026",
+    "file_base64": "JVBERi0xLjc..."
+  },
+  "esign": [
+    {
+      "nip": "197709152006041003",
+      "order": 1,
+      "signature_properties": { "tag": "#", "imageBase64": "iVBORw0KGgo...", "width": 75, "height": 75, "reason": "Menyusun dokumen", "location": "Bandung" }
+    },
+    {
+      "nip": "199004292015042002",
+      "order": 2,
+      "signature_properties": { "tag": "$", "imageBase64": "iVBORw0KGgo...", "width": 75, "height": 75, "reason": "Menyetujui dokumen", "location": "Bandung" }
+    }
+  ]
+}
+```
+
+| Field | Wajib | Aturan |
+| :-- | :-- | :-- |
+| `doc.doc_number` | – | string ≤ 255, **boleh kosong dan boleh duplikat** |
+| `doc.doc_information` | ✅ | string ≤ 255 (perihal dokumen) |
+| `doc.file_base64` | ✅ | PDF base64 valid |
+| `esign` | ✅ | array ≥ 1 item; `order` unik, `nip` dan `tag` tidak boleh duplikat |
+
+`signature_properties`: `tag` ✅, `imageBase64` ✅ (PNG/JPG base64), `width` ✅ ≥1, `height` ✅ ≥1, `reason`, `location` opsional. Setiap penandatangan biasanya memakai `tag` berbeda di PDF (`#`, `$`, ...).
+
+Identitas dokumen adalah `document_id` (UUID dari server), bukan `doc_number`.
+
+## Berjenjang
+
+Hanya penandatangan `order: 1` yang langsung aktif (`status.value = "not_yet_signed"`). Penandatangan berikutnya berstatus `null` sampai penandatangan sebelumnya selesai — itu normal, bukan error. Jangan menganggap dokumen selesai hanya karena penandatangan pertama `finished_signing`.
+
+## PUT
+
+Body lengkap seperti POST (bukan partial). Seluruh daftar penandatangan diganti dan urutan dimulai lagi dari `order: 1`.
+
+## Response
+
+```json
+{
+  "message": "Sign SAKIP document created successfully.",
+  "data": {
+    "doc": { "document_id": "3a8d5c62-3f8f-4fc9-b6bc-079f2a174090", "doc_number": "RKT-2026-001", "doc_information": "Rencana Kerja Tahunan 2026" },
+    "esign": [
+      { "nip": "197709152006041003", "name": "Nama Penandatangan Pertama", "order": 1, "status": { "id": 1, "value": "not_yet_signed", "label": "Belum Ditandatangani" }, "signature_properties": { "tag": "#", "imageBase64": true, "width": 75, "height": 75 } },
+      { "nip": "199004292015042002", "name": "Nama Penandatangan Kedua", "order": 2, "status": null, "signature_properties": { "tag": "$", "imageBase64": true, "width": 75, "height": 75 } }
+    ],
+    "latest_timeline_status": [
+      { "level": 1, "status": "Dokumen berhasil diajukan", "is_completed": true, "completed_at": "2026-08-13 20:00:00" },
+      { "level": 2, "status": "Proses e-sign", "is_completed": false, "completed_at": null }
+    ]
+  }
+}
+```
+
+Pesan: `"Sign SAKIP document created|updated|retrieved successfully."`; tidak ditemukan → `404` `"Sign SAKIP document not found."`.
+
+## Kapan selesai
+
+**Semua** `esign[].status.value == "finished_signing"` dan timeline level 2 `is_completed: true`. Baru kemudian `GET .../file`.

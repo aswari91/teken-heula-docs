@@ -80,7 +80,7 @@ Accept: application/json
 Contoh menggunakan `cURL`:
 
 ```bash
-curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/abc-123" \
+curl -X GET "https://teken.upi.edu/api/sign-language-certs/abc-123" \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 ```
 

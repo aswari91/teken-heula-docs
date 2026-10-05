@@ -111,7 +111,7 @@ Pastikan Anda sudah memiliki:
 | Lingkungan | URL |
 |------------|-----|
 | Development | `http://localhost:8000/api` |
-| Production | `https://tekenheula.upi.edu/api` |
+| Production | `https://teken.upi.edu/api` |
 
 ### Header Wajib
 
@@ -208,7 +208,7 @@ Setiap endpoint harus memiliki struktur yang konsisten:
 
 \`\`\`http
 POST /api/sign-language-certs HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 Content-Type: application/json
 
@@ -269,7 +269,7 @@ Berikut adalah contoh lengkap dari awal hingga akhir untuk membuat dan mengunduh
 ### Langkah 1 — Buat Sertifikat
 
 \`\`\`bash
-curl -X POST "https://tekenheula.upi.edu/api/sign-language-certs" \
+curl -X POST "https://teken.upi.edu/api/sign-language-certs" \
   -H "Authorization: Bearer TOKEN_ANDA" \
   -H "Content-Type: application/json" \
   -d '{ ... payload lengkap ... }'
@@ -282,7 +282,7 @@ Simpan nilai `document_id` dari *response*.
 Karena penandatanganan berjalan di latar belakang, pantau status dokumen:
 
 \`\`\`bash
-curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/{documentId}" \
+curl -X GET "https://teken.upi.edu/api/sign-language-certs/{documentId}" \
   -H "Authorization: Bearer TOKEN_ANDA"
 \`\`\`
 
@@ -291,7 +291,7 @@ Dokumen siap diunduh jika `eseal_status` bernilai `"sealed"`.
 ### Langkah 3 — Unduh File PDF
 
 \`\`\`bash
-curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/{documentId}/file" \
+curl -X GET "https://teken.upi.edu/api/sign-language-certs/{documentId}/file" \
   -H "Authorization: Bearer TOKEN_ANDA" \
   --output sertifikat.pdf
 \`\`\`
@@ -425,7 +425,7 @@ Accept: application/json
 Contoh menggunakan `cURL`:
 
 \`\`\`bash
-curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/abc-123" \
+curl -X GET "https://teken.upi.edu/api/sign-language-certs/abc-123" \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 \`\`\`
 

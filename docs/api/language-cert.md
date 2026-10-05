@@ -50,7 +50,7 @@ Seluruh endpoint API dapat diakses menggunakan basis URL berikut sesuai dengan l
 | Lingkungan      | URL                              |
 | :-------------- | :------------------------------- |
 | **Development** | `http://localhost:8000/api`      |
-| **Production**  | `https://tekenheula.upi.edu/api` |
+| **Production**  | `https://teken.upi.edu/api` |
 
 ### Header Wajib
 
@@ -169,7 +169,7 @@ Setiap item di dalam array `esign` harus memiliki properti berikut:
 
 ```http
 POST /api/sign-language-certs HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 Content-Type: application/json
 
@@ -308,7 +308,7 @@ Content-Type: application/json
 >
 > ```http
 > POST /api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
-> Host: tekenheula.upi.edu
+> Host: teken.upi.edu
 > Authorization: Bearer TOKEN_ANDA
 > Content-Type: application/json
 > X-HTTP-Method-Override: PUT
@@ -336,7 +336,7 @@ Content-Type: application/json
 
 ```http
 PUT /api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 Content-Type: application/json
 
@@ -433,7 +433,7 @@ Content-Type: application/json
 
 ```http
 PUT /api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 Content-Type: application/json
 
@@ -547,7 +547,7 @@ Content-Type: application/json
 
 ```http
 GET /api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 ```
 
@@ -639,7 +639,7 @@ Authorization: Bearer TOKEN_ANDA
 
 ```http
 GET /api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090/file HTTP/1.1
-Host: tekenheula.upi.edu
+Host: teken.upi.edu
 Authorization: Bearer TOKEN_ANDA
 ```
 
@@ -679,7 +679,7 @@ Skenario integrasi dari awal pendaftaran dokumen hingga berhasil diunduh ke komp
 Kirim dokumen sertifikat asli untuk memulai proses antrean penandatanganan.
 
 ```bash
-curl -X POST "https://tekenheula.upi.edu/api/sign-language-certs" \
+curl -X POST "https://teken.upi.edu/api/sign-language-certs" \
   -H "Authorization: Bearer PROSES_TOKEN_RAHASIA" \
   -H "Content-Type: application/json" \
   -d '{
@@ -716,7 +716,7 @@ _Catatan: Simpan string UUID `document_id` dari data response yang dikembalikan.
 Karena proses berjalan secara latar belakang (_asynchronous_), lakukan pengecekan status secara berkala (misal tiap 5 detik).
 
 ```bash
-curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090" \
+curl -X GET "https://teken.upi.edu/api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090" \
   -H "Authorization: Bearer PROSES_TOKEN_RAHASIA"
 ```
 
@@ -727,7 +727,7 @@ _Tunggu hingga parameter `eseal_status` berubah dari `"not_yet_sealed"` menjadi 
 Jika status pengecekan sudah selesai (`sealed`), unduh berkas PDF fisik Anda.
 
 ```bash
-curl -X GET "https://tekenheula.upi.edu/api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090/file" \
+curl -X GET "https://teken.upi.edu/api/sign-language-certs/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090/file" \
   -H "Authorization: Bearer PROSES_TOKEN_RAHASIA" \
   --output sertifikat_budi_santoso.pdf
 ```

@@ -1,0 +1,9 @@
+{
+  "name": "teken-heula-api",
+  "displayName": "Teken Heula API",
+  "version": "1.0.0",
+  "description": "Panduan integrasi API Teken Heula (e-sign/e-seal BSrE UPI) untuk membantu AI menulis kode integrasi.",
+  "author": {
+    "name": "Direktorat Sistem Teknologi Informasi dan Pusat Data - UPI"
+  }
+}

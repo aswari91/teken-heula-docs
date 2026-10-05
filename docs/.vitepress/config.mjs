@@ -7,6 +7,8 @@ export default withMermaid(
     title: "Teken Heula API",
     description: "Dokumentasi Resmi API Sistem E-Sign & E-Seal",
     base: "/docs/",
+    // docs/public holds raw AI assets (skill .md files, llms.txt) that must be served as-is, not rendered as pages.
+    srcExclude: ["public/**"],
     appearance: "dark",
     themeConfig: {
       siteTitle: false,

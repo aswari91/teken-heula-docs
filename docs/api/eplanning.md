@@ -14,6 +14,7 @@ Modul ini melayani integrasi dari aplikasi **e-Planning** untuk penandatanganan 
 - ✅ Memperbarui data dokumen (merevisi isi dokumen atau tanda tangan jika belum selesai diproses).
 - ✅ Memantau status antrean dokumen secara berkala (_real-time status check_).
 - ✅ Mengunduh hasil akhir dokumen dalam format PDF yang telah ditandatangani.
+- ✅ Menghapus dokumen RKAT beserta seluruh data penandatangan dan file PDF-nya.
 
 > [!NOTE]
 > Proses penandatanganan digital berjalan secara _asynchronous_. Dokumen tidak langsung siap seketika setelah API dipanggil. Dokumen Anda akan masuk ke dalam antrean (_queue_) sistem untuk diproses secara berurutan di latar belakang guna menjaga performa server tetap optimal.
@@ -93,6 +94,7 @@ Meskipun token Anda valid, tindakan Anda tetap dibatasi oleh izin (_permission_)
 | `PUT /sign-eplanning/{documentId}`       | Memperbarui data dokumen       | `ApiUpdate:DocEplanning`               |
 | `GET /sign-eplanning/{documentId}`       | Melihat detail status dokumen  | `ApiView:DocEplanning`                 |
 | `GET /sign-eplanning/{documentId}/file`  | Mengunduh file PDF             | `ApiView:DocEplanning`                 |
+| `DELETE /sign-eplanning/{documentId}`    | Menghapus dokumen RKAT         | `ApiDelete:DocEplanning`               |
 
 > [!WARNING]
 >
@@ -512,13 +514,59 @@ Authorization: Bearer TOKEN_ANDA
 }
 ```
 
+### 5. Delete RKAT Document
+
+> **Menghapus dokumen RKAT secara permanen, termasuk seluruh data penandatangan dan file PDF hasil tanda tangan (jika sudah ada).**
+
+> [!WARNING]
+> Penghapusan **tidak dapat dibatalkan** dan **tidak dibatasi status**: dokumen yang masih dalam antrean, sedang diproses, maupun yang sudah selesai ditandatangani tetap akan terhapus. Pastikan dokumen yang dikirim benar sebelum memanggil endpoint ini.
+
+**Informasi Teknis**
+
+| Detail       | Nilai                                      |
+| :----------- | ---------------------------------------------- |
+| **Method**   | `DELETE`                                       |
+| **URL**      | `/api/sign-eplanning/{documentId}`                |
+| **Keamanan** | 🔒 Bearer Token + izin `ApiDelete:DocEplanning` |
+
+**Parameter Path (URL)**
+
+| Parameter    | Tipe          | Wajib | Penjelasan                                  |
+| :----------- | :------------ | :---- | :-------------------------------------------- |
+| `documentId` | string (UUID) | ✅ Ya | ID dokumen unik RKAT yang ingin dihapus.   |
+
+**Contoh Permintaan (Request)**
+
+```http
+DELETE /api/sign-eplanning/3a8d5c62-3f8f-4fc9-b6bc-079f2a174090 HTTP/1.1
+Host: teken.upi.edu
+Authorization: Bearer TOKEN_ANDA
+Accept: application/json
+```
+
+**Response Jika Berhasil (`200 OK`)**
+
+```json
+{
+  "message": "Sign RKAT document deleted successfully."
+}
+```
+
+**Response Jika Dokumen Tidak Ditemukan (`404 Not Found`)**
+
+```json
+{
+  "message": "Sign RKAT document not found."
+}
+```
+
 ## Kode Error & Cara Mengatasinya
 
 Berikut adalah daftar kode status HTTP yang mungkin Anda terima dari API serta solusi penanganannya:
 
 | Kode Status | Keterangan            | Arti / Penyebab                                                    | Solusi Penanganan                                                     |
 | :---------- | :--------------------- | :------------------------------------------------------------------- | :------------------------------------------------------------------- |
-| `200`       | OK                     | Permintaan Anda berhasil dieksekusi.                                  | Dokumen berhasil dibuat/diambil.                                      |
+| `200`       | OK                     | Permintaan Anda berhasil dieksekusi.                                  | Dokumen berhasil dibuat/diambil/dihapus.                              |
 | `400`       | Bad Request            | Terjadi kesalahan logika (misal: mengunduh file yang masih antre).    | Periksa status dokumen terlebih dahulu sebelum mengunduh.             |
 | `401`       | Unauthorized           | Token autentikasi hilang atau kadaluarsa.                             | Perbarui token akses Anda di bagian Header.                           |
 | `403`       | Forbidden              | Anda tidak memiliki hak akses (`permissions`) yang tepat.             | Mintalah administrator untuk menambahkan permission yang sesuai.      |
@@ -609,6 +657,9 @@ Tidak. Berbeda dari modul lain, `doc_number` pada e-Planning boleh dikosongkan d
 
 **❓ Apakah saya bisa melakukan revisi data jika status dokumen masih dalam proses antrean?**
 Bisa. Gunakan endpoint **PUT (Update)**. Seluruh daftar penandatangan akan diganti dengan data baru dan urutan tanda tangan dimulai kembali dari `order: 1`.
+
+**❓ Apakah dokumen yang sudah ditandatangani bisa dihapus?**
+Bisa. Endpoint **DELETE** tidak membatasi status dokumen, dan hasilnya permanen: data dokumen, seluruh penandatangan, dan file PDF hasil tanda tangan ikut terhapus.
 
 **❓ Mengapa file PDF hasil download tidak dapat dibuka atau korup?**
 Masalah ini biasanya disebabkan string `file_base64` yang dikirimkan saat Create/Update tidak lengkap atau format konversinya tidak valid. Pastikan string Base64 yang Anda kirimkan murni tanpa prefix format URL (seperti `data:application/pdf;base64,`).

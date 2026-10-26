@@ -34,7 +34,7 @@ Accept: application/json
 ```
 
 - Token didapat dari halaman profil (menu API Token) di aplikasi Teken Heula. Simpan di environment variable (mis. `TEKEN_HEULA_TOKEN`, `TEKEN_HEULA_BASE_URL`) — **jangan pernah hardcode atau commit token**.
-- Token saja tidak cukup: akun juga butuh permission per modul, `ApiCreate:<Doc>`, `ApiUpdate:<Doc>`, `ApiView:<Doc>` dengan `<Doc>` = `DocLanguageCert` / `DocMandala` / `DocSakip` / `DocEplanning`. Tanpa itu → `403`.
+- Token saja tidak cukup: akun juga butuh permission per modul, `ApiCreate:<Doc>`, `ApiUpdate:<Doc>`, `ApiView:<Doc>` dengan `<Doc>` = `DocLanguageCert` / `DocMandala` / `DocSakip` / `DocEplanning`; khusus e-Planning ada juga `ApiDelete:DocEplanning` untuk `DELETE`. Tanpa itu → `403`.
 - Rate limit: **200 request/menit per token**. Lebih dari itu → `429`.
 - Selalu kirim `Accept: application/json` supaya error validasi kembali sebagai JSON `422`, bukan redirect HTML.
 

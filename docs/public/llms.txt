@@ -31,7 +31,7 @@ Accept: application/json
 ```
 
 - Token didapat dari halaman profil (menu API Token) di aplikasi Teken Heula. Simpan di environment variable (mis. `TEKEN_HEULA_TOKEN`, `TEKEN_HEULA_BASE_URL`) — **jangan pernah hardcode atau commit token**.
-- Token saja tidak cukup: akun juga butuh permission per modul, `ApiCreate:<Doc>`, `ApiUpdate:<Doc>`, `ApiView:<Doc>` dengan `<Doc>` = `DocLanguageCert` / `DocMandala` / `DocSakip` / `DocEplanning`. Tanpa itu → `403`.
+- Token saja tidak cukup: akun juga butuh permission per modul, `ApiCreate:<Doc>`, `ApiUpdate:<Doc>`, `ApiView:<Doc>` dengan `<Doc>` = `DocLanguageCert` / `DocMandala` / `DocSakip` / `DocEplanning`; khusus e-Planning ada juga `ApiDelete:DocEplanning` untuk `DELETE`. Tanpa itu → `403`.
 - Rate limit: **200 request/menit per token**. Lebih dari itu → `429`.
 - Selalu kirim `Accept: application/json` supaya error validasi kembali sebagai JSON `422`, bukan redirect HTML.
 
@@ -249,7 +249,7 @@ def download_pdf(document_id: str) -> bytes | None:
 
 # Modul e-Planning (RKAT)
 
-Endpoint dasar: `/api/sign-eplanning` · Permission: `ApiCreate|ApiUpdate|ApiView:DocEplanning`
+Endpoint dasar: `/api/sign-eplanning` · Permission: `ApiCreate|ApiUpdate|ApiView|ApiDelete:DocEplanning`
 
 Untuk dokumen RKAT (Rencana Kerja dan Anggaran Tahunan) dari aplikasi e-Planning. Hanya e-sign, **penandatanganan berjenjang**. Alur, struktur data, dan validasinya **identik dengan [SAKIP](sakip.md)** — bedanya hanya path, permission, dan teks `message`.
 
@@ -297,6 +297,10 @@ Body lengkap (bukan partial). Daftar penandatangan diganti seluruhnya; urutan mu
 ## Response
 
 Bentuk sama dengan SAKIP. Pesan: `"Sign RKAT document created|updated|retrieved successfully."`; tidak ditemukan → `404` `"Sign RKAT document not found."`.
+
+## DELETE
+
+`DELETE /api/sign-eplanning/{documentId}` (permission `ApiDelete:DocEplanning`). Hapus **permanen** dokumen + semua penandatangan + file PDF hasil (jika ada), **tanpa batasan status** — dokumen yang sedang antre/diproses atau sudah selesai tetap terhapus. Berhasil → `200` `"Sign RKAT document deleted successfully."`; tidak ditemukan → `404` `"Sign RKAT document not found."`; tanpa permission → `403`.
 
 
 <!-- references/errors.md -->

@@ -1,6 +1,6 @@
 # Modul e-Planning (RKAT)
 
-Endpoint dasar: `/api/sign-eplanning` · Permission: `ApiCreate|ApiUpdate|ApiView:DocEplanning`
+Endpoint dasar: `/api/sign-eplanning` · Permission: `ApiCreate|ApiUpdate|ApiView|ApiDelete:DocEplanning`
 
 Untuk dokumen RKAT (Rencana Kerja dan Anggaran Tahunan) dari aplikasi e-Planning. Hanya e-sign, **penandatanganan berjenjang**. Alur, struktur data, dan validasinya **identik dengan [SAKIP](sakip.md)** — bedanya hanya path, permission, dan teks `message`.
 
@@ -48,3 +48,7 @@ Body lengkap (bukan partial). Daftar penandatangan diganti seluruhnya; urutan mu
 ## Response
 
 Bentuk sama dengan SAKIP. Pesan: `"Sign RKAT document created|updated|retrieved successfully."`; tidak ditemukan → `404` `"Sign RKAT document not found."`.
+
+## DELETE
+
+`DELETE /api/sign-eplanning/{documentId}` (permission `ApiDelete:DocEplanning`). Hapus **permanen** dokumen + semua penandatangan + file PDF hasil (jika ada), **tanpa batasan status** — dokumen yang sedang antre/diproses atau sudah selesai tetap terhapus. Berhasil → `200` `"Sign RKAT document deleted successfully."`; tidak ditemukan → `404` `"Sign RKAT document not found."`; tanpa permission → `403`.

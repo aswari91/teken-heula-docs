@@ -109,6 +109,7 @@ Meskipun token Anda valid, tindakan Anda tetap dibatasi oleh izin (_permission_)
 | :---------------- | :----- | :-------- | :---------------- | :--------------------------------------------------------------------------------------------- |
 | `doc_number`      | string | Opsional | Max 255 karakter | Nomor referensi dokumen (jika ada). **Tidak wajib unik** — dokumen RKAT dapat diajukan sebelum mendapat nomor resmi. |
 | `doc_information` | string | ✅ Ya     | Max 255 karakter | Informasi atau perihal tentang isi dokumen RKAT (contoh: "RKAT Tahun Anggaran 2027 Fakultas X").      |
+| `processor_name`  | string | Opsional | Max 255 karakter | Nama pihak yang memproses (menyusun) dokumen RKAT. Jika dikirim, nilai ini tampil sebagai **Nama Pemroses** di panel admin. Kirim `null` pada permintaan PUT untuk mengosongkannya. |
 | `file_base64`     | string | ✅ Ya     | PDF Base64 valid | String dokumen PDF asli yang telah diubah ke format Base64.                                  |
 
 > [!TIP]

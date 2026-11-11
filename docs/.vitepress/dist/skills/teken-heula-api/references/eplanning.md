@@ -32,6 +32,7 @@ Untuk dokumen RKAT (Rencana Kerja dan Anggaran Tahunan) dari aplikasi e-Planning
 | :-- | :-- | :-- |
 | `doc.doc_number` | – | string ≤ 255, boleh kosong dan boleh duplikat (RKAT bisa diajukan sebelum bernomor) |
 | `doc.doc_information` | ✅ | string ≤ 255 |
+| `doc.processor_name` | – | string ≤ 255, opsional; tampil sebagai "Nama Pemroses" di panel. Kirim `null` pada PUT untuk mengosongkan |
 | `doc.file_base64` | ✅ | PDF base64 valid |
 | `esign` | ✅ | array ≥ 1 item; `order` unik, `nip` dan `tag` tidak boleh duplikat |
 

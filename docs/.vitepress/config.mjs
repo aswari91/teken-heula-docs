@@ -37,6 +37,7 @@ export default withMermaid(
             { text: "Mandala", link: "/api/mandala" },
             { text: "SAKIP", link: "/api/sakip" },
             { text: "e-Planning (RKAT)", link: "/api/eplanning" },
+            { text: "Integrator", link: "/api/integrator" },
           ],
         },
       ],
